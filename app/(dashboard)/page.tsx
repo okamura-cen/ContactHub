@@ -1,0 +1,213 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/toast'
+
+interface FormItem {
+  id: string
+  title: string
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  updatedAt: string
+  _count: { responses: number }
+}
+
+const statusLabels: Record<string, { label: string; variant: 'secondary' | 'success' | 'outline' }> = {
+  DRAFT: { label: '下書き', variant: 'secondary' },
+  PUBLISHED: { label: '公開中', variant: 'success' },
+  ARCHIVED: { label: 'アーカイブ', variant: 'outline' },
+}
+
+/** ダッシュボード：フォーム一覧ページ */
+export default function DashboardPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [forms, setForms] = useState<FormItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showNewDialog, setShowNewDialog] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    fetchForms()
+  }, [])
+
+  const fetchForms = async () => {
+    try {
+      const res = await fetch('/api/forms')
+      if (res.ok) {
+        const data = await res.json()
+        setForms(data)
+      }
+    } catch {
+      toast({ title: 'フォームの取得に失敗しました', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreate = async () => {
+    if (!newTitle.trim()) return
+    setCreating(true)
+    try {
+      const res = await fetch('/api/forms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle }),
+      })
+      if (res.ok) {
+        const form = await res.json()
+        router.push(`/forms/${form.id}/edit`)
+      } else {
+        toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDuplicate = async (formId: string) => {
+    try {
+      const res = await fetch(`/api/forms/${formId}`)
+      if (!res.ok) return
+      const original = await res.json()
+
+      const createRes = await fetch('/api/forms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: `${original.title} (コピー)` }),
+      })
+      if (createRes.ok) {
+        const newForm = await createRes.json()
+        // ステップとフィールドもコピー
+        await fetch(`/api/forms/${newForm.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ steps: original.steps }),
+        })
+        toast({ title: 'フォームを複製しました', variant: 'success' })
+        fetchForms()
+      }
+    } catch {
+      toast({ title: '複製に失敗しました', variant: 'destructive' })
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">フォーム一覧</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
+            作成したフォームの管理・編集ができます
+          </p>
+        </div>
+        <Button onClick={() => setShowNewDialog(true)}>
+          + 新規作成
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" />
+        </div>
+      ) : forms.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <p className="text-[hsl(var(--muted-foreground))] mb-4">
+              まだフォームがありません
+            </p>
+            <Button onClick={() => setShowNewDialog(true)}>
+              最初のフォームを作成
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {forms.map((form) => {
+            const statusInfo = statusLabels[form.status]
+            return (
+              <Card key={form.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg line-clamp-1">{form.title}</CardTitle>
+                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))] mb-4">
+                    <span>送信数: {form._count.responses}</span>
+                    <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => router.push(`/forms/${form.id}/edit`)}
+                    >
+                      編集
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
+                    >
+                      プレビュー
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDuplicate(form.id)}
+                    >
+                      複製
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => router.push(`/forms/${form.id}/responses`)}
+                    >
+                      送信データ
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 新規作成ダイアログ */}
+      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
+        <DialogHeader>
+          <DialogTitle>新しいフォームを作成</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <Label htmlFor="form-title">フォームタイトル</Label>
+          <Input
+            id="form-title"
+            placeholder="例: お問い合わせフォーム"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            className="mt-2"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowNewDialog(false)}>
+            キャンセル
+          </Button>
+          <Button onClick={handleCreate} disabled={!newTitle.trim() || creating}>
+            {creating ? '作成中...' : '作成'}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </div>
+  )
+}

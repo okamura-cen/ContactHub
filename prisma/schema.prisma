@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String
+  name      String?
+  plan      Plan     @default(STARTER)
+  forms     Form[]
+  createdAt DateTime @default(now())
+}
+
+enum Plan {
+  STARTER
+  PRO
+  AGENCY
+}
+
+model Form {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  status      FormStatus @default(DRAFT)
+  settings    Json       @default("{}")
+  steps       Step[]
+  responses   Response[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Step {
+  id     String  @id @default(cuid())
+  formId String
+  form   Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  order  Int
+  title  String
+  fields Field[]
+}
+
+model Field {
+  id          String    @id @default(cuid())
+  stepId      String
+  step        Step      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  order       Int
+  type        FieldType
+  label       String
+  placeholder String?
+  helpText    String?
+  required    Boolean   @default(false)
+  options     Json?
+  efoSettings Json?
+  logic       Json?
+}
+
+enum FieldType {
+  TEXT
+  EMAIL
+  TEL
+  TEXTAREA
+  SELECT
+  RADIO
+  CHECKBOX
+  DATE
+  ZIP
+  NAME
+  AGREE
+  HEADING
+  DIVIDER
+}
+
+model Response {
+  id        String   @id @default(cuid())
+  formId    String
+  form      Form     @relation(fields: [formId], references: [id])
+  data      Json
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
