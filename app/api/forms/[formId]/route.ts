@@ -147,7 +147,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Form not found' }, { status: 404 })
     }
 
-    await prisma.form.delete({ where: { id: formId } })
+    await prisma.$transaction([
+      prisma.response.deleteMany({ where: { formId } }),
+      prisma.form.delete({ where: { id: formId } }),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {
