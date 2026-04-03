@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
@@ -19,10 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* サイドバー */}
         <aside className="hidden md:flex w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           <div className="p-6 border-b border-[hsl(var(--border))]">
-            <Link href="/" className="text-xl font-bold text-[hsl(var(--primary))]">
-              ContactHub
+            <Link href="/">
+              <Image src="/contacthub_logo_tate.svg" alt="ContactHub" width={140} height={60} priority />
             </Link>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">EFOフォーム作成SaaS</p>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => (
@@ -49,8 +49,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-auto">
           {/* モバイルヘッダー */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-[hsl(var(--border))]">
-            <Link href="/" className="text-lg font-bold text-[hsl(var(--primary))]">
-              ContactHub
+            <Link href="/">
+              <Image src="/contacthub_logo_tate.svg" alt="ContactHub" width={100} height={44} priority />
             </Link>
             <UserButton signInUrl="/sign-in" />
           </header>
