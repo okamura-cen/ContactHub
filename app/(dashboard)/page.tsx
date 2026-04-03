@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [creating, setCreating] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<FormItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchForms()
@@ -71,6 +73,25 @@ export default function DashboardPage() {
       toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/forms/${deleteTarget.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast({ title: 'フォームを削除しました', variant: 'success' })
+        setDeleteTarget(null)
+        fetchForms()
+      } else {
+        toast({ title: '削除に失敗しました', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: '削除に失敗しました', variant: 'destructive' })
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -175,6 +196,14 @@ export default function DashboardPage() {
                     >
                       送信データ
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                      onClick={() => setDeleteTarget(form)}
+                    >
+                      削除
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -182,6 +211,26 @@ export default function DashboardPage() {
           })}
         </div>
       )}
+
+      {/* 削除確認ダイアログ */}
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogHeader>
+          <DialogTitle>フォームを削除しますか？</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            「{deleteTarget?.title}」を削除します。送信データも含めてすべて削除されます。この操作は元に戻せません。
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            キャンセル
+          </Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            {deleting ? '削除中...' : '削除する'}
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       {/* 新規作成ダイアログ */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
