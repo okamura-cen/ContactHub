@@ -19,9 +19,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen">
         {/* サイドバー */}
         <aside className="hidden md:flex w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-          <div className="p-6 border-b border-[hsl(var(--border))]">
+          <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
             <Link href="/">
-              <Image src="/contacthub_logo_tate.svg" alt="ContactHub" width={140} height={60} priority />
+              <Image src="/contacthub_logo_yoko.svg" alt="ContactHub" width={224} height={48} style={{ width: '100%', height: 'auto' }} priority />
             </Link>
           </div>
           <nav className="flex-1 p-4 space-y-1">
