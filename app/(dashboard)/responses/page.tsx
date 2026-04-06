@@ -22,10 +22,19 @@ interface FormInfo {
   title: string
 }
 
+interface FieldInfo {
+  id: string
+  type: string
+  label: string
+}
+
 interface ResponseItem {
   id: string
   formId: string
-  form: { title: string }
+  form: {
+    title: string
+    steps: { fields: FieldInfo[] }[]
+  }
   data: Record<string, unknown>
   metadata: Record<string, unknown> | null
   isRead: boolean
@@ -282,33 +291,52 @@ function ResponsesContent() {
 
               {/* 送信内容 */}
               <div className="space-y-2">
-                {Object.entries(selectedResponse.data).map(([key, val]) => {
-                  let display = ''
-                  if (val === null || val === undefined) display = ''
-                  else if (typeof val === 'object' && !Array.isArray(val) && 'url' in (val as object)) {
-                    const f = val as { url: string; name: string; size: number }
+                {(() => {
+                  // フィールドIDからラベルへのマップを作成
+                  const fieldMap: Record<string, FieldInfo> = {}
+                  selectedResponse.form.steps?.forEach((s) => {
+                    s.fields?.forEach((f) => { fieldMap[f.id] = f })
+                  })
+                  // フィールド順に表示（不明なキーはスキップ）
+                  const entries = Object.entries(selectedResponse.data)
+                  const orderedFields = Object.values(fieldMap).filter(
+                    (f) => !['HEADING', 'PARAGRAPH', 'DIVIDER'].includes(f.type) && selectedResponse.data[f.id] !== undefined
+                  )
+                  // フォーム定義がある場合は順序通り、ない場合はそのまま
+                  const displayEntries = orderedFields.length > 0
+                    ? orderedFields.map((f) => [f.id, selectedResponse.data[f.id]] as [string, unknown])
+                    : entries
+
+                  return displayEntries.map(([key, val]) => {
+                    const field = fieldMap[key]
+                    const label = field?.label || key
+                    let display = ''
+                    if (val === null || val === undefined) display = ''
+                    else if (typeof val === 'object' && !Array.isArray(val) && val !== null && 'url' in val) {
+                      const f = val as { url: string; name: string; size: number }
+                      return (
+                        <div key={key} className="flex border-b border-[hsl(var(--border))] pb-2">
+                          <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">{label}</span>
+                          <a href={f.url} target="_blank" rel="noopener noreferrer" className="w-2/3 text-sm text-[hsl(var(--primary))] underline">{f.name}</a>
+                        </div>
+                      )
+                    } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
+                      display = Object.values(val as object).filter(Boolean).join(' ')
+                    } else if (Array.isArray(val)) {
+                      display = val.join(', ')
+                    } else if (typeof val === 'boolean') {
+                      display = val ? '同意する' : '同意しない'
+                    } else {
+                      display = String(val)
+                    }
                     return (
                       <div key={key} className="flex border-b border-[hsl(var(--border))] pb-2">
-                        <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">{key}</span>
-                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="w-2/3 text-sm text-[hsl(var(--primary))] underline">{f.name}</a>
+                        <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">{label}</span>
+                        <span className="w-2/3 text-sm break-all">{display || '(未入力)'}</span>
                       </div>
                     )
-                  } else if (typeof val === 'object') {
-                    display = Object.values(val as object).filter(Boolean).join(' ')
-                  } else if (Array.isArray(val)) {
-                    display = (val as string[]).join(', ')
-                  } else if (typeof val === 'boolean') {
-                    display = val ? '同意する' : '同意しない'
-                  } else {
-                    display = String(val)
-                  }
-                  return (
-                    <div key={key} className="flex border-b border-[hsl(var(--border))] pb-2">
-                      <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">{key}</span>
-                      <span className="w-2/3 text-sm break-all">{display || '(未入力)'}</span>
-                    </div>
-                  )
-                })}
+                  })
+                })()}
               </div>
 
               {/* 対応状況 */}
