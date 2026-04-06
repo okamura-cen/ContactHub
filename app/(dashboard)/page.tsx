@@ -2,303 +2,154 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { v4 as uuidv4 } from 'uuid'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useToast } from '@/components/ui/toast'
 
-interface FormItem {
+const STATUS_CONFIG = {
+  PENDING:     { label: '未対応', color: 'bg-red-100 text-red-700' },
+  IN_PROGRESS: { label: '対応中', color: 'bg-yellow-100 text-yellow-700' },
+  COMPLETED:   { label: '完了',   color: 'bg-green-100 text-green-700' },
+  ON_HOLD:     { label: '保留',   color: 'bg-gray-100 text-gray-600' },
+} as const
+
+interface RecentResponse {
   id: string
-  title: string
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  updatedAt: string
-  _count: { responses: number }
+  formId: string
+  formTitle: string
+  isRead: boolean
+  responseStatus: keyof typeof STATUS_CONFIG
+  createdAt: string
+  data: Record<string, unknown>
 }
 
-const statusLabels: Record<string, { label: string; variant: 'secondary' | 'success' | 'outline' }> = {
-  DRAFT: { label: '下書き', variant: 'secondary' },
-  PUBLISHED: { label: '公開中', variant: 'success' },
-  ARCHIVED: { label: 'アーカイブ', variant: 'outline' },
+interface DashboardData {
+  totalForms: number
+  publishedForms: number
+  totalResponses: number
+  unreadResponses: number
+  pendingResponses: number
+  todayResponses: number
+  weekResponses: number
+  recentResponses: RecentResponse[]
 }
 
-/** ダッシュボード：フォーム一覧ページ */
 export default function DashboardPage() {
   const router = useRouter()
-  const { toast } = useToast()
-  const [forms, setForms] = useState<FormItem[]>([])
+  const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showNewDialog, setShowNewDialog] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<FormItem | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    fetchForms()
+    fetch('/api/dashboard')
+      .then((r) => r.json())
+      .then(setData)
+      .finally(() => setLoading(false))
   }, [])
 
-  const fetchForms = async () => {
-    try {
-      const res = await fetch('/api/forms')
-      if (res.ok) {
-        const data = await res.json()
-        setForms(data)
-      }
-    } catch {
-      toast({ title: 'フォームの取得に失敗しました', variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" />
+      </div>
+    )
   }
 
-  const handleCreate = async () => {
-    if (!newTitle.trim()) return
-    setCreating(true)
-    try {
-      const res = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle }),
-      })
-      if (res.ok) {
-        const form = await res.json()
-        router.push(`/forms/${form.id}/edit`)
-      } else {
-        toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
-    } finally {
-      setCreating(false)
-    }
-  }
+  if (!data) return null
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/forms/${deleteTarget.id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast({ title: 'フォームを削除しました', variant: 'success' })
-        setDeleteTarget(null)
-        fetchForms()
-      } else {
-        toast({ title: '削除に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: '削除に失敗しました', variant: 'destructive' })
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  const handleToggleStatus = async (formId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
-    try {
-      const res = await fetch(`/api/forms/${formId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (res.ok) {
-        toast({
-          title: newStatus === 'PUBLISHED' ? 'フォームを公開しました' : 'フォームを非公開にしました',
-          variant: 'success',
-        })
-        fetchForms()
-      } else {
-        toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
-    }
-  }
-
-  const handleDuplicate = async (formId: string) => {
-    try {
-      const res = await fetch(`/api/forms/${formId}`)
-      if (!res.ok) return
-      const original = await res.json()
-
-      const createRes = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: `${original.title} (コピー)` }),
-      })
-      if (createRes.ok) {
-        const newForm = await createRes.json()
-        // ステップとフィールドをIDを振り直してコピー
-        const newSteps = (original.steps || []).map((s: { id: string; title: string; fields: { id: string; [key: string]: unknown }[] }) => ({
-          ...s,
-          id: uuidv4(),
-          fields: (s.fields || []).map((f) => ({ ...f, id: uuidv4() })),
-        }))
-        await fetch(`/api/forms/${newForm.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ steps: newSteps }),
-        })
-        toast({ title: 'フォームを複製しました', variant: 'success' })
-        fetchForms()
-      }
-    } catch {
-      toast({ title: '複製に失敗しました', variant: 'destructive' })
-    }
-  }
+  const summaryCards = [
+    { label: '今日の新規送信', value: data.todayResponses, sub: `今週: ${data.weekResponses}件`, color: 'text-blue-600', icon: '📬' },
+    { label: '未読の送信データ', value: data.unreadResponses, sub: '確認が必要', color: 'text-red-500', icon: '🔴' },
+    { label: '未対応の問い合わせ', value: data.pendingResponses, sub: '対応待ち', color: 'text-orange-500', icon: '⏳' },
+    { label: '公開中フォーム', value: data.publishedForms, sub: `全${data.totalForms}件`, color: 'text-green-600', icon: '✅' },
+  ]
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">フォーム一覧</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-            作成したフォームの管理・編集ができます
-          </p>
-        </div>
-        <Button onClick={() => setShowNewDialog(true)}>
-          + 新規作成
-        </Button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">ダッシュボード</h1>
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">ContactHubの状況を確認できます</p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" />
-        </div>
-      ) : forms.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20">
-            <p className="text-[hsl(var(--muted-foreground))] mb-4">
-              まだフォームがありません
-            </p>
-            <Button onClick={() => setShowNewDialog(true)}>
-              最初のフォームを作成
+      {/* サマリーカード */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {summaryCards.map((card) => (
+          <Card key={card.label}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">{card.label}</p>
+                  <p className={`text-3xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">{card.sub}</p>
+                </div>
+                <span className="text-2xl">{card.icon}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* 最新の送信データ */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">最新の送信データ</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/responses')}>
+              すべて見る →
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {forms.map((form) => {
-            const statusInfo = statusLabels[form.status]
-            return (
-              <Card key={form.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg line-clamp-1">{form.title}</CardTitle>
-                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))] mb-4">
-                    <span>送信数: {form._count.responses}</span>
-                    <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => router.push(`/forms/${form.id}/edit`)}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {data.recentResponses.length === 0 ? (
+            <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-8">まだ送信データがありません</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]">
+                  <th className="text-left p-3 font-medium w-4"></th>
+                  <th className="text-left p-3 font-medium">フォーム</th>
+                  <th className="text-left p-3 font-medium">送信日時</th>
+                  <th className="text-left p-3 font-medium">対応状況</th>
+                  <th className="p-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentResponses.map((r) => {
+                  const statusConf = STATUS_CONFIG[r.responseStatus] || STATUS_CONFIG.PENDING
+                  return (
+                    <tr
+                      key={r.id}
+                      className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] cursor-pointer ${!r.isRead ? 'font-medium' : ''}`}
+                      onClick={() => router.push(`/responses?formId=${r.formId}`)}
                     >
-                      編集
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
-                    >
-                      プレビュー
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={form.status === 'PUBLISHED' ? 'outline' : 'default'}
-                      onClick={() => handleToggleStatus(form.id, form.status)}
-                    >
-                      {form.status === 'PUBLISHED' ? '非公開' : '公開'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDuplicate(form.id)}
-                    >
-                      複製
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`/forms/${form.id}/responses`)}
-                    >
-                      送信データ
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`/forms/${form.id}/analytics`)}
-                    >
-                      分析
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
-                      onClick={() => setDeleteTarget(form)}
-                    >
-                      削除
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
-      {/* 削除確認ダイアログ */}
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogHeader>
-          <DialogTitle>フォームを削除しますか？</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            「{deleteTarget?.title}」を削除します。送信データも含めてすべて削除されます。この操作は元に戻せません。
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-            キャンセル
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? '削除中...' : '削除する'}
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* 新規作成ダイアログ */}
-      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogHeader>
-          <DialogTitle>新しいフォームを作成</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <Label htmlFor="form-title">フォームタイトル</Label>
-          <Input
-            id="form-title"
-            placeholder="例: お問い合わせフォーム"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            className="mt-2"
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowNewDialog(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleCreate} disabled={!newTitle.trim() || creating}>
-            {creating ? '作成中...' : '作成'}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+                      <td className="p-3">
+                        {!r.isRead && <span className="inline-block w-2 h-2 rounded-full bg-[hsl(var(--primary))]" />}
+                      </td>
+                      <td className="p-3">{r.formTitle}</td>
+                      <td className="p-3 whitespace-nowrap text-[hsl(var(--muted-foreground))]">
+                        {new Date(r.createdAt).toLocaleString('ja-JP')}
+                      </td>
+                      <td className="p-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusConf.color}`}>
+                          {statusConf.label}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => { e.stopPropagation(); router.push(`/forms/${r.formId}/responses`) }}
+                        >
+                          詳細
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

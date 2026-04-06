@@ -17,10 +17,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const form = await prisma.form.findFirst({ where: { id: formId, userId: user.id } })
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
-    const { isRead } = await req.json()
+    const body = await req.json()
+    const updateData: { isRead?: boolean; responseStatus?: string; memo?: string } = {}
+    if (body.isRead !== undefined) updateData.isRead = body.isRead
+    if (body.responseStatus !== undefined) updateData.responseStatus = body.responseStatus
+    if (body.memo !== undefined) updateData.memo = body.memo
+
     const updated = await prisma.response.update({
       where: { id: responseId },
-      data: { isRead },
+      data: updateData,
     })
 
     return NextResponse.json(updated)

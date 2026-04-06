@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
           fetch(`/api/forms/${formId}/analytics`),
           fetch(`/api/forms/${formId}`),
         ])
-        if (!analyticsRes.ok) { router.push('/'); return }
+        if (!analyticsRes.ok) { router.push('/forms'); return }
         const [analytics, form] = await Promise.all([analyticsRes.json(), formRes.json()])
         setData(analytics)
         setFormTitle(form.title)
@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+        <Button variant="ghost" size="sm" onClick={() => router.push('/forms')}>
           ← 戻る
         </Button>
       </div>

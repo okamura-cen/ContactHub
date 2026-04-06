@@ -59,7 +59,7 @@ export default function FormBuilderPage() {
       try {
         const res = await fetch(`/api/forms/${formId}`)
         if (!res.ok) {
-          router.push('/')
+          router.push('/forms')
           return
         }
         const form = await res.json()
@@ -261,7 +261,7 @@ export default function FormBuilderPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+          <Button variant="ghost" size="sm" onClick={() => router.push('/forms')}>
             ← 戻る
           </Button>
           <input

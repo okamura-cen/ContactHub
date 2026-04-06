@@ -87,13 +87,23 @@ enum FieldType {
 }
 
 model Response {
-  id        String   @id @default(cuid())
-  formId    String
-  form      Form     @relation(fields: [formId], references: [id])
-  data      Json
-  metadata  Json?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             String         @id @default(cuid())
+  formId         String
+  form           Form           @relation(fields: [formId], references: [id])
+  data           Json
+  metadata       Json?
+  isRead         Boolean        @default(false)
+  responseStatus ResponseStatus @default(PENDING)
+  memo           String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+}
+
+enum ResponseStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
 }
 
 model FormEvent {

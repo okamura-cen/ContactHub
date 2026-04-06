@@ -100,7 +100,7 @@ export default function ResponsesPage() {
   const load = useCallback(async () => {
     try {
       const res = await fetch(`/api/forms/${formId}/responses`)
-      if (!res.ok) { router.push('/'); return }
+      if (!res.ok) { router.push('/forms'); return }
       const data = await res.json()
       setFormTitle(data.form.title)
       setResponses(data.responses)
@@ -201,7 +201,7 @@ export default function ResponsesPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/forms')}>
               ← 戻る
             </Button>
           </div>
