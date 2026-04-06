@@ -10,6 +10,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
+import { MoreHorizontal, Eye, Inbox, BarChart2, Copy, Trash2, Send } from 'lucide-react'
 
 interface FormItem {
   id: string
@@ -53,48 +54,47 @@ function FormCard({
   }, [])
 
   return (
-    <Card
-      className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onEdit}
-    >
-      <CardContent className="p-6">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onEdit}>
+      <CardContent className="p-6 pt-6">
         {/* ヘッダー */}
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg leading-snug mb-1.5">{form.title}</h3>
+            <h3 className="font-bold text-lg leading-snug mb-2">{form.title}</h3>
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </div>
           {/* ⋮ メニュー */}
           <div className="relative shrink-0" ref={menuRef}>
             <button
-              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] text-lg transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] transition-colors"
               onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
               title="その他のアクション"
             >
-              ⋯
+              <MoreHorizontal size={18} />
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-9 z-50 w-44 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg shadow-lg py-1 text-sm">
                 {[
-                  { label: '👁　プレビュー', action: onPreview },
-                  { label: '📬　送信データ', action: onResponses },
-                  { label: '📊　分析', action: onAnalytics },
-                  { label: '📋　複製', action: onDuplicate },
-                ].map(({ label, action }) => (
+                  { label: 'プレビュー', icon: Eye, action: onPreview },
+                  { label: '送信データ', icon: Inbox, action: onResponses },
+                  { label: '分析', icon: BarChart2, action: onAnalytics },
+                  { label: '複製', icon: Copy, action: onDuplicate },
+                ].map(({ label, icon: Icon, action }) => (
                   <button
                     key={label}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] transition-colors"
+                    className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] transition-colors flex items-center gap-2.5"
                     onClick={(e) => { e.stopPropagation(); setMenuOpen(false); action() }}
                   >
+                    <Icon size={14} className="text-[hsl(var(--muted-foreground))]" />
                     {label}
                   </button>
                 ))}
                 <div className="border-t border-[hsl(var(--border))] my-1" />
                 <button
-                  className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] text-[hsl(var(--destructive))] transition-colors"
+                  className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] text-[hsl(var(--destructive))] transition-colors flex items-center gap-2.5"
                   onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
                 >
-                  🗑　削除
+                  <Trash2 size={14} />
+                  削除
                 </button>
               </div>
             )}
@@ -102,23 +102,18 @@ function FormCard({
         </div>
 
         {/* メタ情報 */}
-        <div className="flex items-center gap-5 text-sm text-[hsl(var(--muted-foreground))] mb-5">
+        <div className="flex items-center gap-5 text-sm text-[hsl(var(--muted-foreground))] mb-5 mt-4">
           <span className="flex items-center gap-1.5">
-            <span>📬</span> 送信 <strong className="text-[hsl(var(--foreground))]">{form._count.responses}</strong>件
+            <Send size={13} />
+            送信 <strong className="text-[hsl(var(--foreground))]">{form._count.responses}</strong>件
           </span>
           <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
         </div>
 
         {/* アクションボタン */}
         <div className="flex gap-2.5" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={onEdit} className="flex-1">
-            編集する
-          </Button>
-          <Button
-            variant={form.status === 'PUBLISHED' ? 'outline' : 'outline'}
-            onClick={onToggleStatus}
-            className="flex-1"
-          >
+          <Button onClick={onEdit} className="flex-1">編集する</Button>
+          <Button variant="outline" onClick={onToggleStatus} className="flex-1">
             {form.status === 'PUBLISHED' ? '非公開にする' : '公開する'}
           </Button>
         </div>
