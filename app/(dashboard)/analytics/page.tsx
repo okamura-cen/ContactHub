@@ -14,7 +14,8 @@ interface AnalyticsData {
   submits: number
   completionRate: number
   uniqueSessions: number
-  dailyData: { date: string; views: number; submits: number }[]
+  dailySubmits: { date: string; count: number }[]
+  stepStats: { stepIndex: number; title: string; completions: number }[]
 }
 
 function AnalyticsContent() {
@@ -37,7 +38,7 @@ function AnalyticsContent() {
       .finally(() => setLoading(false))
   }, [selectedFormId])
 
-  const maxVal = data ? Math.max(...data.dailyData.map(d => Math.max(d.views, d.submits)), 1) : 1
+  const maxVal = data ? Math.max(...data.dailySubmits.map(d => d.count), 1) : 1
 
   return (
     <div>
@@ -95,22 +96,17 @@ function AnalyticsContent() {
           {/* 日別グラフ */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">日別推移（直近30日）</CardTitle>
+              <CardTitle className="text-base">日別送信数（直近30日）</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-end gap-1 h-40 overflow-x-auto pb-2">
-                {data.dailyData.map((d) => (
+                {data.dailySubmits.map((d) => (
                   <div key={d.date} className="flex flex-col items-center gap-0.5 min-w-[28px]">
-                    <div className="flex items-end gap-0.5 h-32">
+                    <div className="flex items-end h-32">
                       <div
-                        className="w-2.5 bg-[hsl(var(--primary)/0.3)] rounded-t"
-                        style={{ height: `${(d.views / maxVal) * 100}%`, minHeight: d.views > 0 ? 4 : 0 }}
-                        title={`ビュー: ${d.views}`}
-                      />
-                      <div
-                        className="w-2.5 bg-[hsl(var(--primary))] rounded-t"
-                        style={{ height: `${(d.submits / maxVal) * 100}%`, minHeight: d.submits > 0 ? 4 : 0 }}
-                        title={`送信: ${d.submits}`}
+                        className="w-4 bg-[hsl(var(--primary))] rounded-t"
+                        style={{ height: `${(d.count / maxVal) * 100}%`, minHeight: d.count > 0 ? 4 : 0 }}
+                        title={`送信: ${d.count}`}
                       />
                     </div>
                     <span className="text-[9px] text-[hsl(var(--muted-foreground))] rotate-45 origin-left mt-1 whitespace-nowrap">
@@ -120,11 +116,35 @@ function AnalyticsContent() {
                 ))}
               </div>
               <div className="flex gap-4 mt-4 text-xs text-[hsl(var(--muted-foreground))]">
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[hsl(var(--primary)/0.3)]" />ビュー</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[hsl(var(--primary))]" />送信</span>
+                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-[hsl(var(--primary))]" />送信数</span>
               </div>
             </CardContent>
           </Card>
+
+          {/* ステップファンネル */}
+          {data.stepStats.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">ステップ通過数</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {data.stepStats.map((s) => (
+                  <div key={s.stepIndex}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{s.title}</span>
+                      <span className="text-[hsl(var(--muted-foreground))]">{s.completions}件</span>
+                    </div>
+                    <div className="h-2 bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[hsl(var(--primary))] rounded-full"
+                        style={{ width: `${data.views > 0 ? Math.min((s.completions / data.views) * 100, 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       ) : null}
     </div>
