@@ -64,6 +64,21 @@ export default function ResponsesPage() {
           { key: `${f.id}.seiKana`, label: 'セイ', getValue: (d) => { const v = d[f.id] as Record<string, string> | undefined; return v?.seiKana || '' } },
           { key: `${f.id}.meiKana`, label: 'メイ', getValue: (d) => { const v = d[f.id] as Record<string, string> | undefined; return v?.meiKana || '' } },
         )
+      } else if (f.type === 'FILE') {
+        cols.push({
+          key: f.id,
+          label: f.label,
+          getValue: (d) => {
+            const val = d[f.id] as { name?: string; size?: number; url?: string } | null
+            if (!val || typeof val !== 'object') return ''
+            const size = val.size
+              ? val.size < 1024 * 1024
+                ? `${(val.size / 1024).toFixed(1)}KB`
+                : `${(val.size / (1024 * 1024)).toFixed(1)}MB`
+              : ''
+            return val.name ? `${val.name}${size ? ` (${size})` : ''}` : ''
+          },
+        })
       } else {
         cols.push({
           key: f.id,
@@ -73,6 +88,7 @@ export default function ResponsesPage() {
             if (val === null || val === undefined) return ''
             if (Array.isArray(val)) return val.join(', ')
             if (typeof val === 'boolean') return val ? '同意する' : '同意しない'
+            if (typeof val === 'object') return JSON.stringify(val)
             return String(val)
           },
         })
@@ -299,16 +315,32 @@ export default function ResponsesPage() {
                   {selectedResponse.isRead ? '未読に戻す' : '既読にする'}
                 </Button>
               </div>
-              {columns.map((c) => (
-                <div key={c.key} className="flex border-b border-[hsl(var(--border))] pb-2">
-                  <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                    {c.label}
-                  </span>
-                  <span className="w-2/3 text-sm break-all">
-                    {c.getValue(selectedResponse.data) || '(未入力)'}
-                  </span>
-                </div>
-              ))}
+              {columns.map((c) => {
+                const rawVal = selectedResponse.data[c.key] ?? selectedResponse.data[c.key.split('.')[0]]
+                const isFile = rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal) && 'url' in rawVal
+                const fileVal = isFile ? rawVal as { url: string; name: string; size: number } : null
+                return (
+                  <div key={c.key} className="flex border-b border-[hsl(var(--border))] pb-2">
+                    <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                      {c.label}
+                    </span>
+                    <span className="w-2/3 text-sm break-all">
+                      {fileVal ? (
+                        <a
+                          href={fileVal.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[hsl(var(--primary))] underline"
+                        >
+                          {c.getValue(selectedResponse.data) || fileVal.name}
+                        </a>
+                      ) : (
+                        c.getValue(selectedResponse.data) || '(未入力)'
+                      )}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
             <DialogFooter>
               <Button
