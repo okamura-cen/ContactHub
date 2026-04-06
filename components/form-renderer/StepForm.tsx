@@ -269,6 +269,12 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
             } else if (field.type === 'zip' && typeof val === 'object' && val !== null) {
               const z = val as { zipcode: string; prefecture: string; city: string; address: string }
               displayVal = `〒${z.zipcode} ${z.prefecture}${z.city}${z.address}`
+            } else if (field.type === 'file' && typeof val === 'object' && val !== null) {
+              const f = val as { name: string; size: number }
+              const size = f.size < 1024 * 1024
+                ? `${(f.size / 1024).toFixed(1)} KB`
+                : `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+              displayVal = `${f.name}（${size}）`
             } else if (Array.isArray(val)) {
               displayVal = val.join(', ')
             } else if (typeof val === 'boolean') {
