@@ -52,14 +52,24 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
           プロパティ
         </h3>
 
-        {/* ラベル */}
+        {/* ラベル / テキスト */}
         <div className="space-y-1">
-          <Label className="text-xs">ラベル</Label>
-          <Input
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            className="text-sm h-9"
-          />
+          <Label className="text-xs">{field.type === 'paragraph' ? 'テキスト内容' : 'ラベル'}</Label>
+          {field.type === 'paragraph' ? (
+            <textarea
+              value={field.label}
+              onChange={(e) => updateField({ label: e.target.value })}
+              rows={4}
+              className="w-full text-sm rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 resize-y"
+              placeholder="表示するテキストを入力してください"
+            />
+          ) : (
+            <Input
+              value={field.label}
+              onChange={(e) => updateField({ label: e.target.value })}
+              className="text-sm h-9"
+            />
+          )}
         </div>
 
         {/* プレースホルダー（レイアウト以外） */}

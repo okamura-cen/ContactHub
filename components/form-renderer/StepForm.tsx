@@ -243,7 +243,7 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
 
   // 確認画面
   if (showConfirmation) {
-    const allFields = steps.flatMap((s) => s.fields).filter((f) => !['heading', 'divider'].includes(f.type))
+    const allFields = steps.flatMap((s) => s.fields).filter((f) => !['heading', 'paragraph', 'divider'].includes(f.type))
 
     return (
       <div ref={formRef}>

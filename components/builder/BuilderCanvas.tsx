@@ -26,6 +26,7 @@ const fieldTypeLabels: Record<string, string> = {
   name: '氏名+ふりがな',
   agree: '同意チェック',
   heading: '見出し',
+  paragraph: 'テキスト',
   divider: '区切り線',
 }
 

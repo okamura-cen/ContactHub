@@ -27,6 +27,7 @@ const paletteItems: PaletteItem[] = [
   { type: 'file', label: 'ファイル添付', category: 'basic' },
   // レイアウト
   { type: 'heading', label: '見出し', category: 'layout' },
+  { type: 'paragraph', label: 'テキスト', category: 'layout' },
   { type: 'divider', label: '区切り線', category: 'layout' },
 ]
 

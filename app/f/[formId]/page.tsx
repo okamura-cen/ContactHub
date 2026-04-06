@@ -36,7 +36,7 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
     title: s.title,
     fields: s.fields.map((f) => ({
       id: f.id,
-      type: f.type.toLowerCase() as 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'zip' | 'name' | 'agree' | 'file' | 'heading' | 'divider',
+      type: f.type.toLowerCase() as 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'zip' | 'name' | 'agree' | 'file' | 'heading' | 'paragraph' | 'divider',
       label: f.label,
       placeholder: f.placeholder || undefined,
       helpText: f.helpText || undefined,

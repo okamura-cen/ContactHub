@@ -188,6 +188,12 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
                 {field.label}
               </h3>
             )
+          case 'paragraph':
+            return (
+              <p key={field.id} className="text-sm text-[hsl(var(--muted-foreground))] whitespace-pre-wrap leading-relaxed">
+                {field.label}
+              </p>
+            )
           case 'divider':
             return <hr key={field.id} className="border-[hsl(var(--border))]" />
           default:

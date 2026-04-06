@@ -48,7 +48,7 @@ export default function ResponsesPage() {
   const buildColumns = (fields: FieldInfo[]): DisplayColumn[] => {
     const cols: DisplayColumn[] = []
     fields.forEach((f) => {
-      if (['HEADING', 'DIVIDER'].includes(f.type)) return
+      if (['HEADING', 'PARAGRAPH', 'DIVIDER'].includes(f.type)) return
 
       if (f.type === 'ZIP') {
         cols.push(

@@ -12,6 +12,7 @@ export type FieldType =
   | 'agree'
   | 'file'
   | 'heading'
+  | 'paragraph'
   | 'divider'
 
 export interface EfoSettings {

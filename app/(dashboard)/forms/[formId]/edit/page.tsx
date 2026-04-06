@@ -27,6 +27,7 @@ const defaultLabels: Record<FieldType, string> = {
   agree: '個人情報の取り扱いに同意する',
   file: 'ファイル添付',
   heading: '見出し',
+  paragraph: 'テキストをここに入力してください',
   divider: '',
 }
 

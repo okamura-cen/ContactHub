@@ -85,6 +85,7 @@ export function buildZodSchema(fields: BuilderField[]) {
         shape[field.id] = schema
         return
       case 'heading':
+      case 'paragraph':
       case 'divider':
         return
       default:

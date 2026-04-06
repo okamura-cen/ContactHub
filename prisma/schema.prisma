@@ -82,6 +82,7 @@ enum FieldType {
   AGREE
   FILE
   HEADING
+  PARAGRAPH
   DIVIDER
 }
 
