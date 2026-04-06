@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { v4 as uuidv4 } from 'uuid'
 import { BuilderStep, BuilderField, FieldType, FormSettings } from '@/types/builder'
 import { FieldPalette } from '@/components/builder/FieldPalette'
 import { BuilderCanvas } from '@/components/builder/BuilderCanvas'
@@ -97,7 +96,7 @@ export default function FormBuilderPage() {
         )
 
         if (builderSteps.length === 0) {
-          const defaultStep = { id: uuidv4(), title: 'ステップ 1', fields: [] }
+          const defaultStep = { id: crypto.randomUUID(), title: 'ステップ 1', fields: [] }
           setSteps([defaultStep])
           setActiveStepId(defaultStep.id)
         } else {
@@ -119,7 +118,7 @@ export default function FormBuilderPage() {
   // フィールド追加
   const handleAddField = useCallback((type: FieldType) => {
     const newField: BuilderField = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       type,
       label: defaultLabels[type] || type,
       required: false,
@@ -191,7 +190,7 @@ export default function FormBuilderPage() {
   // ステップ操作
   const handleAddStep = useCallback(() => {
     const newStep: BuilderStep = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       title: `ステップ ${steps.length + 1}`,
       fields: [],
     }

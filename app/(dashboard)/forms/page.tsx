@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -231,8 +230,8 @@ export default function DashboardPage() {
         // ステップとフィールドをIDを振り直してコピー
         const newSteps = (original.steps || []).map((s: { id: string; title: string; fields: { id: string; [key: string]: unknown }[] }) => ({
           ...s,
-          id: uuidv4(),
-          fields: (s.fields || []).map((f) => ({ ...f, id: uuidv4() })),
+          id: crypto.randomUUID(),
+          fields: (s.fields || []).map((f) => ({ ...f, id: crypto.randomUUID() })),
         }))
         await fetch(`/api/forms/${newForm.id}`, {
           method: 'PUT',
