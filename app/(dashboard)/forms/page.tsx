@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,99 @@ const statusLabels: Record<string, { label: string; variant: 'secondary' | 'succ
   DRAFT: { label: '下書き', variant: 'secondary' },
   PUBLISHED: { label: '公開中', variant: 'success' },
   ARCHIVED: { label: 'アーカイブ', variant: 'outline' },
+}
+
+/** フォームカード（ドロップダウンメニュー付き） */
+function FormCard({
+  form, statusInfo, onEdit, onToggleStatus, onPreview, onDuplicate, onResponses, onAnalytics, onDelete,
+}: {
+  form: FormItem
+  statusInfo: { label: string; variant: 'secondary' | 'success' | 'outline' }
+  onEdit: () => void
+  onToggleStatus: () => void
+  onPreview: () => void
+  onDuplicate: () => void
+  onResponses: () => void
+  onAnalytics: () => void
+  onDelete: () => void
+}) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <Card
+      className="hover:shadow-md transition-shadow cursor-pointer group"
+      onClick={onEdit}
+    >
+      <CardContent className="p-5">
+        {/* ヘッダー：タイトル + ステータス + ⋮メニュー */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h3 className="font-semibold text-base leading-snug line-clamp-2 flex-1">{form.title}</h3>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+            <div className="relative" ref={menuRef}>
+              <button
+                className="p-1 rounded hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] transition-colors"
+                onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
+              >
+                ⋯
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-8 z-50 w-40 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg shadow-lg py-1 text-sm">
+                  {[
+                    { label: '👁 プレビュー', action: onPreview },
+                    { label: '📬 送信データ', action: onResponses },
+                    { label: '📊 分析', action: onAnalytics },
+                    { label: '📋 複製', action: onDuplicate },
+                    { label: '🗑 削除', action: onDelete, danger: true },
+                  ].map(({ label, action, danger }) => (
+                    <button
+                      key={label}
+                      className={`w-full text-left px-4 py-2 hover:bg-[hsl(var(--accent))] transition-colors ${danger ? 'text-[hsl(var(--destructive))]' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); action() }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* メタ情報 */}
+        <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))] mb-4">
+          <span>📬 送信 {form._count.responses}件</span>
+          <span>更新 {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
+        </div>
+
+        {/* アクションボタン */}
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" onClick={onEdit} className="flex-1">
+            編集
+          </Button>
+          <Button
+            size="sm"
+            variant={form.status === 'PUBLISHED' ? 'outline' : 'default'}
+            onClick={onToggleStatus}
+            className="flex-1"
+          >
+            {form.status === 'PUBLISHED' ? '非公開にする' : '公開する'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 /** ダッシュボード：フォーム一覧ページ */
@@ -180,75 +273,22 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {forms.map((form) => {
             const statusInfo = statusLabels[form.status]
             return (
-              <Card key={form.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg line-clamp-1">{form.title}</CardTitle>
-                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))] mb-4">
-                    <span>送信数: {form._count.responses}</span>
-                    <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => router.push(`/forms/${form.id}/edit`)}
-                    >
-                      編集
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
-                    >
-                      プレビュー
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={form.status === 'PUBLISHED' ? 'outline' : 'default'}
-                      onClick={() => handleToggleStatus(form.id, form.status)}
-                    >
-                      {form.status === 'PUBLISHED' ? '非公開' : '公開'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDuplicate(form.id)}
-                    >
-                      複製
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`/forms/${form.id}/responses`)}
-                    >
-                      送信データ
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`/forms/${form.id}/analytics`)}
-                    >
-                      分析
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
-                      onClick={() => setDeleteTarget(form)}
-                    >
-                      削除
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <FormCard
+                key={form.id}
+                form={form}
+                statusInfo={statusInfo}
+                onEdit={() => router.push(`/forms/${form.id}/edit`)}
+                onToggleStatus={() => handleToggleStatus(form.id, form.status)}
+                onPreview={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
+                onDuplicate={() => handleDuplicate(form.id)}
+                onResponses={() => router.push(`/forms/${form.id}/responses`)}
+                onAnalytics={() => router.push(`/forms/${form.id}/analytics`)}
+                onDelete={() => setDeleteTarget(form)}
+              />
             )
           })}
         </div>
