@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { ResponseStatus } from '@prisma/client'
 
 type Params = { params: Promise<{ formId: string; responseId: string }> }
 
@@ -18,9 +19,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
     const body = await req.json()
-    const updateData: { isRead?: boolean; responseStatus?: string; memo?: string } = {}
+    const updateData: { isRead?: boolean; responseStatus?: ResponseStatus; memo?: string } = {}
     if (body.isRead !== undefined) updateData.isRead = body.isRead
-    if (body.responseStatus !== undefined) updateData.responseStatus = body.responseStatus
+    if (body.responseStatus !== undefined) updateData.responseStatus = body.responseStatus as ResponseStatus
     if (body.memo !== undefined) updateData.memo = body.memo
 
     const updated = await prisma.response.update({
