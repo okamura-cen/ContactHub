@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Mail, BellDot, Clock, Globe, type LucideIcon } from 'lucide-react'
 
 const STATUS_CONFIG = {
   PENDING:     { label: '未対応', color: 'bg-red-100 text-red-700' },
@@ -56,11 +56,11 @@ export default function DashboardPage() {
 
   if (!data) return null
 
-  const summaryCards = [
-    { label: '今日の新規送信', value: data.todayResponses, sub: `今週: ${data.weekResponses}件`, color: 'text-blue-600', icon: '📬' },
-    { label: '未読の送信データ', value: data.unreadResponses, sub: '確認が必要', color: 'text-red-500', icon: '🔴' },
-    { label: '未対応の問い合わせ', value: data.pendingResponses, sub: '対応待ち', color: 'text-orange-500', icon: '⏳' },
-    { label: '公開中フォーム', value: data.publishedForms, sub: `全${data.totalForms}件`, color: 'text-green-600', icon: '✅' },
+  const summaryCards: { label: string; value: number; sub: string; icon: LucideIcon }[] = [
+    { label: '今日の新規送信',    value: data.todayResponses,   sub: `今週: ${data.weekResponses}件`, icon: Mail },
+    { label: '未読の送信データ',  value: data.unreadResponses,  sub: '確認が必要',                    icon: BellDot },
+    { label: '未対応の問い合わせ', value: data.pendingResponses, sub: '対応待ち',                     icon: Clock },
+    { label: '公開中フォーム',    value: data.publishedForms,   sub: `全${data.totalForms}件`,        icon: Globe },
   ]
 
   return (
@@ -72,20 +72,23 @@ export default function DashboardPage() {
 
       {/* サマリーカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {summaryCards.map((card) => (
-          <Card key={card.label}>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-[hsl(var(--muted-foreground))]">{card.label}</p>
-                  <p className={`text-3xl font-bold mt-1 ${card.color}`}>{card.value}</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">{card.sub}</p>
+        {summaryCards.map((card) => {
+          const Icon = card.icon
+          return (
+            <Card key={card.label}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">{card.label}</p>
+                    <p className="text-3xl font-bold mt-1">{card.value}</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">{card.sub}</p>
+                  </div>
+                  <Icon size={20} className="text-[hsl(var(--muted-foreground))]" />
                 </div>
-                <span className="text-2xl">{card.icon}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {/* 最新の送信データ */}
