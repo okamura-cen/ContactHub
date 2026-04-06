@@ -61,7 +61,7 @@ function AnalyticsContent() {
 
       {!selectedFormId ? (
         <Card>
-          <CardContent className="py-20 text-center text-[hsl(var(--muted-foreground))]">
+          <CardContent className="py-20 pt-24 text-center text-[hsl(var(--muted-foreground))]">
             上のセレクトボックスからフォームを選択してください
           </CardContent>
         </Card>
