@@ -24,6 +24,7 @@ const paletteItems: PaletteItem[] = [
   { type: 'zip', label: '郵便番号+住所', category: 'efo', isEfo: true },
   { type: 'name', label: '氏名+ふりがな', category: 'efo', isEfo: true },
   { type: 'agree', label: '同意チェック', category: 'efo', isEfo: true },
+  { type: 'file', label: 'ファイル添付', category: 'basic' },
   // レイアウト
   { type: 'heading', label: '見出し', category: 'layout' },
   { type: 'divider', label: '区切り線', category: 'layout' },

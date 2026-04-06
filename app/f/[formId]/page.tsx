@@ -36,7 +36,7 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
     title: s.title,
     fields: s.fields.map((f) => ({
       id: f.id,
-      type: f.type.toLowerCase() as 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'zip' | 'name' | 'agree' | 'heading' | 'divider',
+      type: f.type.toLowerCase() as 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'zip' | 'name' | 'agree' | 'file' | 'heading' | 'divider',
       label: f.label,
       placeholder: f.placeholder || undefined,
       helpText: f.helpText || undefined,
@@ -56,6 +56,10 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
       settings={{
         successMessage: (settings?.successMessage as string) || '送信が完了しました。',
         redirectUrl: (settings?.redirectUrl as string) || undefined,
+        primaryColor: (settings?.primaryColor as string) || undefined,
+        fontFamily: (settings?.fontFamily as string) || undefined,
+        customCss: (settings?.customCss as string) || undefined,
+        recaptchaEnabled: (settings?.recaptchaEnabled as boolean) || false,
       }}
     />
   )

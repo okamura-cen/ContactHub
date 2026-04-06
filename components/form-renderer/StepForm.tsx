@@ -12,7 +12,19 @@ interface StepFormProps {
   settings: {
     successMessage?: string
     redirectUrl?: string
+    recaptchaEnabled?: boolean
   }
+}
+
+/** セッションIDを生成または取得 */
+function getSessionId(): string {
+  const key = 'efo_session_id'
+  let id = sessionStorage.getItem(key)
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36)
+    sessionStorage.setItem(key, id)
+  }
+  return id
 }
 
 /** ステップ式フォーム制御コンポーネント */
@@ -27,6 +39,18 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
   const [transitioning, setTransitioning] = useState(false)
   const startTimeRef = useRef(Date.now())
   const formRef = useRef<HTMLDivElement>(null)
+  const sessionIdRef = useRef<string>('')
+
+  // セッションID初期化 & VIEW イベント送信
+  useEffect(() => {
+    sessionIdRef.current = getSessionId()
+    fetch(`/api/forms/${formId}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'VIEW', sessionId: sessionIdRef.current }),
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const totalSteps = steps.length
   const currentStep = steps[currentStepIndex]
@@ -115,6 +139,12 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
   // 次へ
   const handleNext = useCallback(() => {
     if (!validateCurrentStep()) return
+    // ステップ完了イベント送信
+    fetch(`/api/forms/${formId}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'STEP_COMPLETE', stepIndex: currentStepIndex, sessionId: sessionIdRef.current }),
+    }).catch(() => {})
     if (isLastStep) {
       setShowConfirmation(true)
       return
@@ -122,7 +152,7 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
     animateTransition(() => {
       setCurrentStepIndex((prev) => prev + 1)
     })
-  }, [validateCurrentStep, isLastStep, animateTransition])
+  }, [validateCurrentStep, isLastStep, animateTransition, formId, currentStepIndex])
 
   // 戻る
   const handleBack = useCallback(() => {
@@ -141,11 +171,22 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
   const handleSubmit = useCallback(async () => {
     setSubmitting(true)
     try {
+      let recaptchaToken: string | undefined
+      const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+      if (settings.recaptchaEnabled && siteKey && typeof window !== 'undefined' && (window as unknown as { grecaptcha?: { execute: (key: string, options: { action: string }) => Promise<string> } }).grecaptcha) {
+        try {
+          recaptchaToken = await (window as unknown as { grecaptcha: { execute: (key: string, options: { action: string }) => Promise<string> } }).grecaptcha.execute(siteKey, { action: 'submit' })
+        } catch {
+          // reCAPTCHA失敗時も送信続行
+        }
+      }
+
       const res = await fetch(`/api/forms/${formId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: values,
+          recaptchaToken,
           metadata: {
             completionTimeMs: Date.now() - startTimeRef.current,
           },
@@ -153,6 +194,12 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
       })
       const result = await res.json()
       if (res.ok && result.success) {
+        // 送信完了イベント
+        fetch(`/api/forms/${formId}/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'SUBMIT', sessionId: sessionIdRef.current }),
+        }).catch(() => {})
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl
           return
@@ -289,6 +336,7 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
             errors={errors}
             onChange={handleChange}
             onBlur={handleBlur}
+            formId={formId}
           />
         )}
       </div>

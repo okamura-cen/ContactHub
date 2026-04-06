@@ -10,6 +10,7 @@ export type FieldType =
   | 'zip'
   | 'name'
   | 'agree'
+  | 'file'
   | 'heading'
   | 'divider'
 
@@ -17,6 +18,18 @@ export interface EfoSettings {
   realtimeValidation: boolean
   autoFormat: boolean
   autoComplete: boolean
+}
+
+export interface FieldLogicCondition {
+  fieldId: string
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_empty'
+  value?: string
+}
+
+export interface FieldLogic {
+  action: 'show' | 'hide'
+  operator: 'AND' | 'OR'
+  conditions: FieldLogicCondition[]
 }
 
 export interface BuilderField {
@@ -28,6 +41,7 @@ export interface BuilderField {
   required: boolean
   options?: string[]
   efoSettings?: EfoSettings
+  logic?: FieldLogic
 }
 
 export interface BuilderStep {
@@ -42,4 +56,8 @@ export interface FormSettings {
   notifyEmails: string[]
   autoReply: boolean
   autoReplyMessage?: string
+  primaryColor?: string
+  fontFamily?: string
+  customCss?: string
+  recaptchaEnabled?: boolean
 }

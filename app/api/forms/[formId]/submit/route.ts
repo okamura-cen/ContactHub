@@ -12,7 +12,7 @@ export async function POST(
   try {
     const { formId } = await params
     const body = await req.json()
-    const { data, metadata } = body
+    const { data, metadata, recaptchaToken } = body
 
     // フォームを取得
     const form = await prisma.form.findUnique({
@@ -33,6 +33,26 @@ export async function POST(
       return NextResponse.json({ error: 'This form is archived' }, { status: 404 })
     }
 
+    // reCAPTCHA v3 検証
+    const settings = form.settings as Record<string, unknown> | null
+    if (settings?.recaptchaEnabled && process.env.RECAPTCHA_SECRET_KEY) {
+      if (!recaptchaToken) {
+        return NextResponse.json({ error: 'reCAPTCHA verification required' }, { status: 400 })
+      }
+      try {
+        const verifyRes = await fetch(
+          `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
+          { method: 'POST' }
+        )
+        const verifyData = await verifyRes.json() as { success: boolean; score?: number }
+        if (!verifyData.success || (verifyData.score !== undefined && verifyData.score < 0.5)) {
+          return NextResponse.json({ error: 'reCAPTCHA verification failed' }, { status: 400 })
+        }
+      } catch {
+        // 検証失敗時は通過させる（可用性優先）
+      }
+    }
+
     // レスポンスを保存
     const response = await prisma.response.create({
       data: {
@@ -46,8 +66,6 @@ export async function POST(
         },
       },
     })
-
-    const settings = form.settings as Record<string, unknown> | null
 
     // 管理者通知メール送信
     if (resend && settings) {

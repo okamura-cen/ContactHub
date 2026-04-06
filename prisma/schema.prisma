@@ -80,6 +80,7 @@ enum FieldType {
   ZIP
   NAME
   AGREE
+  FILE
   HEADING
   DIVIDER
 }
@@ -90,5 +91,23 @@ model Response {
   form      Form     @relation(fields: [formId], references: [id])
   data      Json
   metadata  Json?
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model FormEvent {
+  id        String         @id @default(cuid())
+  formId    String
+  type      FormEventType
+  stepIndex Int?
+  sessionId String
+  createdAt DateTime       @default(now())
+
+  @@index([formId, createdAt])
+}
+
+enum FormEventType {
+  VIEW
+  STEP_COMPLETE
+  SUBMIT
 }

@@ -1,17 +1,18 @@
 'use client'
 
-import { BuilderField } from '@/types/builder'
+import { BuilderField, FieldLogic, FieldLogicCondition } from '@/types/builder'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 
 interface PropertyPanelProps {
   field: BuilderField | null
+  allFields: BuilderField[]
   onChange: (field: BuilderField) => void
 }
 
 /** プロパティパネル：選択中フィールドの設定 */
-export function PropertyPanel({ field, onChange }: PropertyPanelProps) {
+export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps) {
   if (!field) {
     return (
       <div className="w-[260px] border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 flex items-center justify-center">
@@ -128,6 +129,129 @@ export function PropertyPanel({ field, onChange }: PropertyPanelProps) {
             </Button>
           </div>
         )}
+
+        {/* 条件分岐ロジック */}
+        {!isLayoutField && (() => {
+          const logic = field.logic
+          const otherFields = allFields.filter((f) => f.id !== field.id && !['heading', 'divider'].includes(f.type))
+          const hasLogic = logic && logic.conditions.length > 0
+
+          const updateLogic = (updates: Partial<FieldLogic>) => {
+            const base: FieldLogic = logic || { action: 'show', operator: 'AND', conditions: [] }
+            updateField({ logic: { ...base, ...updates } })
+          }
+
+          const updateCondition = (index: number, updates: Partial<FieldLogicCondition>) => {
+            const conditions = [...(logic?.conditions || [])]
+            conditions[index] = { ...conditions[index], ...updates }
+            updateLogic({ conditions })
+          }
+
+          const addCondition = () => {
+            const first = otherFields[0]
+            if (!first) return
+            updateLogic({
+              conditions: [...(logic?.conditions || []), { fieldId: first.id, operator: 'equals', value: '' }]
+            })
+          }
+
+          const removeCondition = (index: number) => {
+            const conditions = (logic?.conditions || []).filter((_, i) => i !== index)
+            if (conditions.length === 0) {
+              updateField({ logic: undefined })
+            } else {
+              updateLogic({ conditions })
+            }
+          }
+
+          return (
+            <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold">条件分岐</p>
+                {!hasLogic && otherFields.length > 0 && (
+                  <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={addCondition}>
+                    + 条件を追加
+                  </Button>
+                )}
+              </div>
+              {hasLogic && logic && (
+                <>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span>このフィールドを</span>
+                    <select
+                      value={logic.action}
+                      onChange={(e) => updateLogic({ action: e.target.value as 'show' | 'hide' })}
+                      className="border border-[hsl(var(--border))] rounded px-1 py-0.5 text-xs bg-[hsl(var(--background))]"
+                    >
+                      <option value="show">表示</option>
+                      <option value="hide">非表示</option>
+                    </select>
+                    <span>する</span>
+                  </div>
+                  {logic.conditions.length > 1 && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <select
+                        value={logic.operator}
+                        onChange={(e) => updateLogic({ operator: e.target.value as 'AND' | 'OR' })}
+                        className="border border-[hsl(var(--border))] rounded px-1 py-0.5 text-xs bg-[hsl(var(--background))]"
+                      >
+                        <option value="AND">すべての条件を満たす（AND）</option>
+                        <option value="OR">いずれかの条件を満たす（OR）</option>
+                      </select>
+                    </div>
+                  )}
+                  {logic.conditions.map((cond, i) => (
+                    <div key={i} className="space-y-1 p-2 bg-[hsl(var(--secondary))] rounded text-xs">
+                      <div className="flex gap-1 items-center">
+                        <select
+                          value={cond.fieldId}
+                          onChange={(e) => updateCondition(i, { fieldId: e.target.value })}
+                          className="flex-1 border border-[hsl(var(--border))] rounded px-1 py-0.5 text-xs bg-[hsl(var(--background))]"
+                        >
+                          {otherFields.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5 shrink-0 text-[hsl(var(--destructive))]"
+                          onClick={() => removeCondition(i)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                      <select
+                        value={cond.operator}
+                        onChange={(e) => updateCondition(i, { operator: e.target.value as FieldLogicCondition['operator'] })}
+                        className="w-full border border-[hsl(var(--border))] rounded px-1 py-0.5 text-xs bg-[hsl(var(--background))]"
+                      >
+                        <option value="equals">が次と等しい</option>
+                        <option value="not_equals">が次と等しくない</option>
+                        <option value="contains">が次を含む</option>
+                        <option value="not_empty">が入力されている</option>
+                      </select>
+                      {cond.operator !== 'not_empty' && (
+                        <Input
+                          value={cond.value || ''}
+                          onChange={(e) => updateCondition(i, { value: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="値を入力"
+                        />
+                      )}
+                    </div>
+                  ))}
+                  <Button size="sm" variant="ghost" className="text-xs h-6 px-2 w-full" onClick={addCondition}>
+                    + 条件を追加
+                  </Button>
+                </>
+              )}
+              {!hasLogic && otherFields.length === 0 && (
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">他のフィールドを追加すると条件分岐を設定できます</p>
+              )}
+            </div>
+          )
+        })()}
 
         {/* EFO設定 */}
         {['email', 'tel', 'zip', 'name'].includes(field.type) && (

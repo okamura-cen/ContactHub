@@ -1,6 +1,27 @@
 'use client'
 
-import { BuilderField } from '@/types/builder'
+import { BuilderField, FieldLogic } from '@/types/builder'
+
+/** 条件分岐ロジックを評価してフィールドを表示すべきか判定 */
+function evaluateLogic(logic: FieldLogic | undefined, values: Record<string, unknown>): boolean {
+  if (!logic || logic.conditions.length === 0) return true
+
+  const results = logic.conditions.map((cond) => {
+    const val = values[cond.fieldId]
+    const strVal = typeof val === 'string' ? val : Array.isArray(val) ? val.join(',') : String(val || '')
+
+    switch (cond.operator) {
+      case 'equals': return strVal === (cond.value || '')
+      case 'not_equals': return strVal !== (cond.value || '')
+      case 'contains': return strVal.includes(cond.value || '')
+      case 'not_empty': return strVal.trim().length > 0
+      default: return true
+    }
+  })
+
+  const matched = logic.operator === 'AND' ? results.every(Boolean) : results.some(Boolean)
+  return logic.action === 'show' ? matched : !matched
+}
 import { TextField } from './fields/TextField'
 import { EmailField } from './fields/EmailField'
 import { TelField } from './fields/TelField'
@@ -11,6 +32,7 @@ import { SelectField } from './fields/SelectField'
 import { RadioField } from './fields/RadioField'
 import { CheckboxField } from './fields/CheckboxField'
 import { AgreeField } from './fields/AgreeField'
+import { FileField } from './fields/FileField'
 
 interface FormRendererProps {
   fields: BuilderField[]
@@ -18,15 +40,19 @@ interface FormRendererProps {
   errors: Record<string, string>
   onChange: (fieldId: string, value: unknown) => void
   onBlur: (fieldId: string) => void
+  formId?: string
   /** ZipFieldの住所補完で他フィールドにもsetValueするためのコールバック */
   onAddressFound?: (address: { prefecture: string; city: string; address: string }) => void
 }
 
 /** フォームフィールドの動的レンダラー */
-export function FormRenderer({ fields, values, errors, onChange, onBlur, onAddressFound }: FormRendererProps) {
+export function FormRenderer({ fields, values, errors, onChange, onBlur, formId = '', onAddressFound }: FormRendererProps) {
   return (
     <div className="space-y-6">
       {fields.map((field) => {
+        // 条件分岐評価
+        if (!evaluateLogic(field.logic, values)) return null
+
         const commonProps = {
           id: field.id,
           label: field.label,
@@ -143,6 +169,16 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, onAddre
                 key={field.id}
                 {...commonProps}
                 value={!!values[field.id]}
+                onChange={(v) => onChange(field.id, v)}
+              />
+            )
+          case 'file':
+            return (
+              <FileField
+                key={field.id}
+                {...commonProps}
+                formId={formId}
+                value={(values[field.id] as { url: string; name: string; size: number; type: string }) || null}
                 onChange={(v) => onChange(field.id, v)}
               />
             )

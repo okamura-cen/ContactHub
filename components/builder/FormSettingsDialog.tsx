@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+const FONT_OPTIONS = [
+  { value: '', label: 'デフォルト（システムフォント）' },
+  { value: '"Noto Sans JP", sans-serif', label: 'Noto Sans JP' },
+  { value: '"Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif', label: 'ヒラギノ角ゴ' },
+  { value: '"Yu Gothic", "游ゴシック", sans-serif', label: '游ゴシック' },
+  { value: '"M PLUS Rounded 1c", sans-serif', label: 'M PLUS Rounded 1c' },
+]
+
 interface FormSettingsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -90,6 +98,72 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
               />
             </div>
           )}
+        </div>
+
+        {/* スパム対策 */}
+        <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
+          <p className="text-sm font-medium">スパム対策</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="recaptcha-enabled"
+              checked={local.recaptchaEnabled ?? false}
+              onChange={(e) => setLocal({ ...local, recaptchaEnabled: e.target.checked })}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="recaptcha-enabled" className="text-sm cursor-pointer">
+              reCAPTCHA v3 を有効にする
+            </Label>
+          </div>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            有効にするには環境変数 NEXT_PUBLIC_RECAPTCHA_SITE_KEY と RECAPTCHA_SECRET_KEY の設定が必要です
+          </p>
+        </div>
+
+        {/* デザイン設定 */}
+        <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+          <p className="text-sm font-medium">デザイン設定</p>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm w-24 shrink-0">テーマカラー</Label>
+            <input
+              type="color"
+              value={local.primaryColor || '#2563eb'}
+              onChange={(e) => setLocal({ ...local, primaryColor: e.target.value })}
+              className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
+            />
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.primaryColor || '#2563eb'}</span>
+            {local.primaryColor && (
+              <button
+                className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                onClick={() => setLocal({ ...local, primaryColor: undefined })}
+              >
+                リセット
+              </button>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-sm">フォント</Label>
+            <select
+              value={local.fontFamily || ''}
+              onChange={(e) => setLocal({ ...local, fontFamily: e.target.value })}
+              className="w-full h-9 px-3 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))]"
+            >
+              {FONT_OPTIONS.map((f) => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-sm">カスタムCSS</Label>
+            <Textarea
+              value={local.customCss || ''}
+              onChange={(e) => setLocal({ ...local, customCss: e.target.value })}
+              rows={5}
+              placeholder={`.efo-form {\n  border-radius: 12px;\n}\n.efo-form button {\n  border-radius: 4px;\n}`}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">.efo-form をルートセレクタとして使用できます</p>
+          </div>
         </div>
       </div>
       <DialogFooter>

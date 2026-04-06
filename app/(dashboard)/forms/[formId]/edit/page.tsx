@@ -25,6 +25,7 @@ const defaultLabels: Record<FieldType, string> = {
   zip: '郵便番号',
   name: 'お名前',
   agree: '個人情報の取り扱いに同意する',
+  file: 'ファイル添付',
   heading: '見出し',
   divider: '',
 }
@@ -45,6 +46,7 @@ export default function FormBuilderPage() {
     notifyEmails: [],
     autoReply: false,
   })
+  const [formStatus, setFormStatus] = useState<'DRAFT' | 'PUBLISHED' | 'ARCHIVED'>('DRAFT')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showEmbed, setShowEmbed] = useState(false)
@@ -61,6 +63,7 @@ export default function FormBuilderPage() {
         }
         const form = await res.json()
         setTitle(form.title)
+        setFormStatus(form.status || 'DRAFT')
         setSettings({
           successMessage: (form.settings as Record<string, unknown>)?.successMessage as string || '送信が完了しました。',
           redirectUrl: (form.settings as Record<string, unknown>)?.redirectUrl as string || undefined,
@@ -213,6 +216,9 @@ export default function FormBuilderPage() {
   const handleSave = useCallback(async (publish = false) => {
     setSaving(true)
     try {
+      const newStatus = publish
+        ? (formStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED')
+        : undefined
       const res = await fetch(`/api/forms/${formId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -220,12 +226,15 @@ export default function FormBuilderPage() {
           title,
           settings,
           steps,
-          ...(publish && { status: 'PUBLISHED' }),
+          ...(newStatus !== undefined && { status: newStatus }),
         }),
       })
       if (res.ok) {
+        if (newStatus) setFormStatus(newStatus)
         toast({
-          title: publish ? 'フォームを公開しました' : '保存しました',
+          title: newStatus === 'PUBLISHED' ? 'フォームを公開しました'
+            : newStatus === 'DRAFT' ? 'フォームを非公開にしました'
+            : '保存しました',
           variant: 'success',
         })
       } else {
@@ -236,7 +245,7 @@ export default function FormBuilderPage() {
     } finally {
       setSaving(false)
     }
-  }, [formId, title, settings, steps, toast])
+  }, [formId, formStatus, title, settings, steps, toast])
 
   if (loading) {
     return (
@@ -277,8 +286,13 @@ export default function FormBuilderPage() {
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
             {saving ? '保存中...' : '保存'}
           </Button>
-          <Button size="sm" onClick={() => handleSave(true)} disabled={saving}>
-            公開する
+          <Button
+            size="sm"
+            variant={formStatus === 'PUBLISHED' ? 'outline' : 'default'}
+            onClick={() => handleSave(true)}
+            disabled={saving}
+          >
+            {formStatus === 'PUBLISHED' ? '非公開にする' : '公開する'}
           </Button>
         </div>
       </div>
@@ -304,7 +318,11 @@ export default function FormBuilderPage() {
           onMoveDown={handleMoveDown}
           onDelete={handleDeleteField}
         />
-        <PropertyPanel field={selectedField} onChange={handleFieldChange} />
+        <PropertyPanel
+          field={selectedField}
+          allFields={activeStep?.fields || []}
+          onChange={handleFieldChange}
+        />
       </div>
 
       {/* ダイアログ */}

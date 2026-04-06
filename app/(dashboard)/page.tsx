@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { v4 as uuidv4 } from 'uuid'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -95,6 +96,28 @@ export default function DashboardPage() {
     }
   }
 
+  const handleToggleStatus = async (formId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
+    try {
+      const res = await fetch(`/api/forms/${formId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (res.ok) {
+        toast({
+          title: newStatus === 'PUBLISHED' ? 'フォームを公開しました' : 'フォームを非公開にしました',
+          variant: 'success',
+        })
+        fetchForms()
+      } else {
+        toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
+    }
+  }
+
   const handleDuplicate = async (formId: string) => {
     try {
       const res = await fetch(`/api/forms/${formId}`)
@@ -108,11 +131,16 @@ export default function DashboardPage() {
       })
       if (createRes.ok) {
         const newForm = await createRes.json()
-        // ステップとフィールドもコピー
+        // ステップとフィールドをIDを振り直してコピー
+        const newSteps = (original.steps || []).map((s: { id: string; title: string; fields: { id: string; [key: string]: unknown }[] }) => ({
+          ...s,
+          id: uuidv4(),
+          fields: (s.fields || []).map((f) => ({ ...f, id: uuidv4() })),
+        }))
         await fetch(`/api/forms/${newForm.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ steps: original.steps }),
+          body: JSON.stringify({ steps: newSteps }),
         })
         toast({ title: 'フォームを複製しました', variant: 'success' })
         fetchForms()
@@ -184,6 +212,13 @@ export default function DashboardPage() {
                     </Button>
                     <Button
                       size="sm"
+                      variant={form.status === 'PUBLISHED' ? 'outline' : 'default'}
+                      onClick={() => handleToggleStatus(form.id, form.status)}
+                    >
+                      {form.status === 'PUBLISHED' ? '非公開' : '公開'}
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="ghost"
                       onClick={() => handleDuplicate(form.id)}
                     >
@@ -195,6 +230,13 @@ export default function DashboardPage() {
                       onClick={() => router.push(`/forms/${form.id}/responses`)}
                     >
                       送信データ
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => router.push(`/forms/${form.id}/analytics`)}
+                    >
+                      分析
                     </Button>
                     <Button
                       size="sm"
