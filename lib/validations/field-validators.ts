@@ -66,6 +66,24 @@ export function buildZodSchema(fields: BuilderField[]) {
         }
         shape[field.id] = schema
         return
+      case 'file':
+        if (field.required) {
+          schema = z.object({
+            url: z.string().min(1),
+            name: z.string(),
+            size: z.number(),
+            type: z.string(),
+          }, { required_error: `${field.label}を添付してください` })
+        } else {
+          schema = z.object({
+            url: z.string(),
+            name: z.string(),
+            size: z.number(),
+            type: z.string(),
+          }).optional()
+        }
+        shape[field.id] = schema
+        return
       case 'heading':
       case 'divider':
         return
