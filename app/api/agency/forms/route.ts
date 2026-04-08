@@ -31,9 +31,48 @@ export async function GET(req: NextRequest) {
       client: { select: { id: true, name: true, email: true } },
       createdAt: true,
       updatedAt: true,
+      _count: { select: { responses: true } },
     },
     orderBy: { updatedAt: 'desc' },
   })
 
   return NextResponse.json(forms)
+}
+
+/** POST /api/agency/forms - フォーム新規作成 */
+export async function POST(req: NextRequest) {
+  const agency = await requireAgency()
+  if (!agency) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = await req.json()
+  const { title, clientId } = body
+
+  if (!title?.trim()) {
+    return NextResponse.json({ error: 'タイトルは必須です' }, { status: 400 })
+  }
+
+  // clientId指定の場合は担当確認
+  if (clientId) {
+    const hasClient = await agencyHasClient(agency.id, clientId)
+    if (!hasClient) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const form = await prisma.form.create({
+    data: {
+      title,
+      userId: agency.id,
+      clientId: clientId || null,
+      settings: {
+        successMessage: '送信が完了しました。ありがとうございます。',
+        notifyEmails: [],
+        autoReply: false,
+      },
+      steps: {
+        create: { order: 0, title: 'ステップ 1' },
+      },
+    },
+    include: { steps: { include: { fields: true } } },
+  })
+
+  return NextResponse.json(form, { status: 201 })
 }
