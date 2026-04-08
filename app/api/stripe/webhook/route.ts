@@ -22,11 +22,10 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
-      // 決済完了 → ライセンスをACTIVEに（1年間）
+      // 決済成功 → ライセンスをACTIVEに
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        // payment モードのみ処理（subscription モードは使用しない）
-        if (session.mode !== 'payment') break
+        if (session.mode !== 'subscription') break
 
         const formId = session.metadata?.formId
         if (!formId) break
@@ -44,11 +43,70 @@ export async function POST(req: NextRequest) {
             licenseStatus: 'ACTIVE',
             licenseExpiresAt,
             dataDeleteAt,
-            stripePaymentId: session.payment_intent as string,
+            stripePaymentId: session.subscription as string,
           },
         })
 
         console.log(`✅ License activated for form: ${formId}`)
+        break
+      }
+
+      // サブスクリプション削除（解約・更新失敗） → 期限切れに
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as Stripe.Subscription
+
+        const form = await prisma.form.findFirst({
+          where: { stripePaymentId: sub.id },
+        })
+        if (!form) break
+
+        await prisma.form.update({
+          where: { id: form.id },
+          data: {
+            licenseStatus: 'EXPIRED',
+            status: 'ARCHIVED',
+          },
+        })
+
+        console.log(`⚠️ License expired, form archived: ${form.id}`)
+        break
+      }
+
+      // 支払い失敗（Stripeが自動リトライするためログのみ）
+      case 'invoice.payment_failed': {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any
+        const subId: string | undefined =
+          invoice.subscription ?? invoice.parent?.subscription_details?.subscription
+        console.log(`💳 Payment failed for subscription: ${subId}`)
+        break
+      }
+
+      // サブスクリプション更新成功 → 有効期限を1年延長
+      case 'invoice.payment_succeeded': {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any
+        const subId: string | undefined =
+          invoice.subscription ?? invoice.parent?.subscription_details?.subscription
+        if (!subId) break
+
+        // 初回はcheckout.session.completedで処理するため2回目以降のみ
+        const form = await prisma.form.findFirst({
+          where: { stripePaymentId: subId },
+        })
+        if (!form || form.licenseStatus === 'PENDING') break
+
+        const licenseExpiresAt = new Date()
+        licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 1)
+        const dataDeleteAt = new Date(licenseExpiresAt)
+        dataDeleteAt.setFullYear(dataDeleteAt.getFullYear() + 1)
+
+        await prisma.form.update({
+          where: { id: form.id },
+          data: { licenseStatus: 'ACTIVE', licenseExpiresAt, dataDeleteAt },
+        })
+
+        console.log(`🔄 License renewed for form: ${form.id}`)
         break
       }
     }
