@@ -74,10 +74,10 @@ export async function POST(req: NextRequest) {
 
       // 支払い失敗
       case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice
-        const subId = typeof invoice.subscription === 'string'
-          ? invoice.subscription
-          : invoice.subscription?.id
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any
+        const subId: string | undefined =
+          invoice.subscription ?? invoice.parent?.subscription_details?.subscription
 
         if (!subId) break
 
@@ -89,10 +89,10 @@ export async function POST(req: NextRequest) {
 
       // サブスクリプション更新成功 → 有効期限を1年延長
       case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice
-        const subId = typeof invoice.subscription === 'string'
-          ? invoice.subscription
-          : invoice.subscription?.id
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any
+        const subId: string | undefined =
+          invoice.subscription ?? invoice.parent?.subscription_details?.subscription
 
         if (!subId) break
 
