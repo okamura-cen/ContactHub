@@ -1,24 +1,25 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function SettingsPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => r.json())
+      .then((u) => {
+        if (u.role === 'AGENCY') {
+          router.replace('/agency/settings')
+        }
+      })
+      .catch(() => {})
+  }, [router])
+
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">設定</h1>
-        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">アカウントや通知の設定を管理できます</p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">準備中</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            設定ページは近日公開予定です。
-          </p>
-        </CardContent>
-      </Card>
+    <div className="flex items-center justify-center py-20">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" />
     </div>
   )
 }

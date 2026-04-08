@@ -13,7 +13,7 @@ const navItems = [
   { href: '/forms',     label: 'フォーム管理',   icon: FileText,        clientHidden: false, agencyHidden: false },
   { href: '/responses', label: '送信データ',     icon: Inbox,           clientHidden: false, agencyHidden: false },
   { href: '/analytics', label: '分析',           icon: BarChart2,       clientHidden: false, agencyHidden: false },
-  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true,  agencyHidden: true  },
+  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true,  agencyHidden: false },
 ]
 
 /** サイドバー付きダッシュボードレイアウト */
