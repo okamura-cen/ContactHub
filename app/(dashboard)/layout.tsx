@@ -9,11 +9,11 @@ import { ToastProvider } from '@/components/ui/toast'
 import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck } from 'lucide-react'
 
 const navItems = [
-  { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard },
-  { href: '/forms',     label: 'フォーム管理',   icon: FileText },
-  { href: '/responses', label: '送信データ',     icon: Inbox },
-  { href: '/analytics', label: '分析',           icon: BarChart2 },
-  { href: '/settings',  label: '設定',           icon: Settings },
+  { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard, clientHidden: false },
+  { href: '/forms',     label: 'フォーム管理',   icon: FileText,        clientHidden: false },
+  { href: '/responses', label: '送信データ',     icon: Inbox,           clientHidden: false },
+  { href: '/analytics', label: '分析',           icon: BarChart2,       clientHidden: false },
+  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true  },
 ]
 
 /** サイドバー付きダッシュボードレイアウト */
@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           <nav className="flex-1 p-3 space-y-0.5">
-            {navItems.map((item) => {
+            {navItems.filter((item) => !(isClient && item.clientHidden)).map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
               return (
