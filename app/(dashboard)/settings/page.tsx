@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -238,7 +237,6 @@ function ClientSettings({ profile }: { profile: Profile }) {
 // ---------- Page entry ----------
 
 export default function SettingsPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -247,10 +245,6 @@ export default function SettingsPage() {
     fetch('/api/me')
       .then((r) => r.json())
       .then((u) => {
-        if (u.role === 'SUPER_ADMIN') {
-          router.replace('/admin/users')
-          return
-        }
         setProfile(u)
         setLoading(false)
       })
@@ -258,7 +252,7 @@ export default function SettingsPage() {
         toast({ title: 'データの取得に失敗しました', variant: 'destructive' })
         setLoading(false)
       })
-  }, [router, toast])
+  }, [toast])
 
   if (loading) {
     return (
@@ -270,6 +264,6 @@ export default function SettingsPage() {
 
   if (!profile) return null
 
-  if (profile.role === 'AGENCY') return <AgencySettings profile={profile} />
+  if (profile.role === 'AGENCY' || profile.role === 'SUPER_ADMIN') return <AgencySettings profile={profile} />
   return <ClientSettings profile={profile} />
 }

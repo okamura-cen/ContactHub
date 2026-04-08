@@ -235,6 +235,6 @@ export default function DashboardPage() {
   }, [])
 
   if (!role) return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>
-  if (role === 'AGENCY') return <AgencyDashboard />
+  if (role === 'AGENCY' || role === 'SUPER_ADMIN') return <AgencyDashboard />
   return <ClientDashboard />
 }

@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest) {
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user || user.role !== 'AGENCY') {
+  if (!user || (user.role !== 'AGENCY' && user.role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

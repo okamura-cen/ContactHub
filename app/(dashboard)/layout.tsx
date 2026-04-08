@@ -26,7 +26,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
-      if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
+      if (u.role === 'SUPER_ADMIN') {
+        setIsSuperAdmin(true)
+        setIsAgency(true) // SUPER_ADMINは自分を代理店として扱う
+      }
       if (u.role === 'AGENCY') setIsAgency(true)
       if (u.role === 'CLIENT') {
         setIsClient(true)

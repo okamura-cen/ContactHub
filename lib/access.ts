@@ -9,10 +9,12 @@ export async function getCurrentUser(): Promise<User | null> {
   return prisma.user.findUnique({ where: { clerkId } })
 }
 
-/** AGENCYロールのユーザーを取得（違う場合はnull） */
+/** AGENCYまたはSUPER_ADMINロールのユーザーを取得（違う場合はnull）
+ *  SUPER_ADMINは自分自身を代理店として扱い、自分のフォーム・クライアントを管理できる。 */
 export async function requireAgency(): Promise<User | null> {
   const user = await getCurrentUser()
-  if (!user || user.role !== 'AGENCY') return null
+  if (!user) return null
+  if (user.role !== 'AGENCY' && user.role !== 'SUPER_ADMIN') return null
   return user
 }
 
@@ -26,7 +28,7 @@ export async function agencyHasClient(agencyId: string, clientId: string): Promi
 
 /**
  * フォームへのアクセス権チェック
- * - SUPER_ADMIN: 不可（個人情報保護）
+ * - SUPER_ADMIN: 自分が所有するフォーム（AGENCY同様に自分のデータのみ扱う）
  * - AGENCY: 自分が所有するフォーム
  * - CLIENT: 自分に割り当てられたフォーム
  */
@@ -40,7 +42,7 @@ export async function canAccessForm(
   })
   if (!form) return false
 
-  if (user.role === 'AGENCY') return form.userId === user.id
+  if (user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') return form.userId === user.id
   if (user.role === 'CLIENT') return form.clientId === user.id
 
   return false
@@ -61,7 +63,7 @@ export async function canEditForm(
   })
   if (!form) return { allowed: false, fullAccess: false }
 
-  if (user.role === 'AGENCY' && form.userId === user.id) {
+  if ((user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') && form.userId === user.id) {
     return { allowed: true, fullAccess: true }
   }
   if (user.role === 'CLIENT' && form.clientId === user.id) {
