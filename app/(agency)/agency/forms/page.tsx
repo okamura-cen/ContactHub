@@ -288,7 +288,7 @@ export default function AgencyFormsPage() {
               key={form.id}
               form={form}
               clients={clients}
-              onEdit={() => router.push(`/forms/${form.id}/edit`)}
+              onEdit={() => router.push(`/forms/${form.id}/edit?back=/agency/forms`)}
               onDelete={() => handleDelete(form)}
               onAssignClient={(clientId) => handleAssignClient(form.id, clientId)}
               onResponses={() => router.push(`/agency/forms/${form.id}/responses`)}

@@ -40,7 +40,7 @@ export default function AgencyNewFormPage() {
       })
       if (res.ok) {
         const form = await res.json()
-        router.push(`/forms/${form.id}/edit`)
+        router.push(`/forms/${form.id}/edit?back=/agency/forms`)
       } else {
         const { error } = await res.json()
         toast({ title: error || 'エラーが発生しました', variant: 'destructive' })

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { BuilderStep, BuilderField, FieldType, FormSettings } from '@/types/builder'
 import { FieldPalette } from '@/components/builder/FieldPalette'
 import { BuilderCanvas } from '@/components/builder/BuilderCanvas'
@@ -30,12 +30,13 @@ const defaultLabels: Record<FieldType, string> = {
   divider: '',
 }
 
-/** フォームビルダー（編集画面） */
-export default function FormBuilderPage() {
+function FormBuilderContent() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const formId = params.formId as string
+  const backUrl = searchParams.get('back') || '/forms'
 
   const [title, setTitle] = useState('')
   const [steps, setSteps] = useState<BuilderStep[]>([])
@@ -298,7 +299,7 @@ export default function FormBuilderPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/forms')}>
+          <Button variant="ghost" size="sm" onClick={() => router.push(backUrl)}>
             ← 戻る
           </Button>
           <input
@@ -396,5 +397,14 @@ export default function FormBuilderPage() {
         onSave={setSettings}
       />
     </div>
+  )
+}
+
+/** フォームビルダー（編集画面） */
+export default function FormBuilderPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-[80vh]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>}>
+      <FormBuilderContent />
+    </Suspense>
   )
 }
