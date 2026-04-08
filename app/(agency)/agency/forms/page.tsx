@@ -140,7 +140,13 @@ function FormCard({
           <span className="text-xs text-[hsl(var(--muted-foreground))]">
             送信 {form._count.responses}件
           </span>
-          <Button size="sm" onClick={onEdit}>編集する</Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>
+              <UserCheck size={14} className="mr-1" />
+              クライアント
+            </Button>
+            <Button size="sm" onClick={onEdit}>編集する</Button>
+          </div>
         </div>
       </CardContent>
 

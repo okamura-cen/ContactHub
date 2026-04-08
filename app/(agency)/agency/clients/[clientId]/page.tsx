@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { ArrowLeft, FileText, Upload, Pencil, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { ArrowLeft, FileText, Upload, Pencil, CheckCircle, Clock, XCircle, Plus, X } from 'lucide-react'
 
 const LICENSE_CONFIG = {
   PENDING:  { label: '未決済', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
@@ -21,6 +21,7 @@ interface Form {
   status: string
   licenseStatus: keyof typeof LICENSE_CONFIG
   licenseExpiresAt: string | null
+  clientId: string | null
   createdAt: string
 }
 
@@ -43,17 +44,21 @@ export default function AgencyClientDetailPage() {
   const clientId = params.clientId as string
 
   const [relation, setRelation] = useState<Relation | null>(null)
-  const [forms, setForms] = useState<Form[]>([])
+  const [forms, setForms] = useState<Form[]>([])       // このクライアントに割り当て済み
+  const [allForms, setAllForms] = useState<Form[]>([]) // 代理店の全フォーム
   const [loading, setLoading] = useState(true)
   const [editingLogo, setEditingLogo] = useState(false)
   const [logoUrl, setLogoUrl] = useState('')
   const [savingLogo, setSavingLogo] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [assigning, setAssigning] = useState(false)
 
   const load = async () => {
     setLoading(true)
-    const [relRes, formsRes] = await Promise.all([
+    const [relRes, assignedRes, allFormsRes] = await Promise.all([
       fetch(`/api/agency/clients`),
       fetch(`/api/agency/forms?clientId=${clientId}`),
+      fetch(`/api/agency/forms`),
     ])
     if (relRes.ok) {
       const all: Relation[] = await relRes.json()
@@ -65,8 +70,41 @@ export default function AgencyClientDetailPage() {
         router.push('/agency/clients')
       }
     }
-    if (formsRes.ok) setForms(await formsRes.json())
+    if (assignedRes.ok) setForms(await assignedRes.json())
+    if (allFormsRes.ok) setAllForms(await allFormsRes.json())
     setLoading(false)
+  }
+
+  const handleAssign = async (formId: string) => {
+    setAssigning(true)
+    const res = await fetch(`/api/agency/forms/${formId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId }),
+    })
+    if (res.ok) {
+      toast({ title: 'フォームを割り当てました', variant: 'success' })
+      load()
+    } else {
+      toast({ title: 'エラーが発生しました', variant: 'destructive' })
+    }
+    setAssigning(false)
+  }
+
+  const handleUnassign = async (formId: string) => {
+    setAssigning(true)
+    const res = await fetch(`/api/agency/forms/${formId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: null }),
+    })
+    if (res.ok) {
+      toast({ title: '割り当てを解除しました', variant: 'success' })
+      load()
+    } else {
+      toast({ title: 'エラーが発生しました', variant: 'destructive' })
+    }
+    setAssigning(false)
   }
 
   useEffect(() => { load() }, [clientId])
@@ -175,8 +213,9 @@ export default function AgencyClientDetailPage() {
               <FileText size={16} />
               割り当て済みフォーム（{forms.length}件）
             </CardTitle>
-            <Button size="sm" onClick={() => router.push('/agency/forms')}>
-              フォームを管理
+            <Button size="sm" onClick={() => setShowAssignModal(true)}>
+              <Plus size={14} className="mr-1" />
+              フォームを割り当て
             </Button>
           </div>
         </CardHeader>
@@ -184,8 +223,8 @@ export default function AgencyClientDetailPage() {
           {forms.length === 0 ? (
             <div className="text-center py-12 text-[hsl(var(--muted-foreground))]">
               <p className="text-sm mb-3">このクライアントに割り当てられたフォームはありません</p>
-              <Button size="sm" variant="outline" onClick={() => router.push('/agency/forms')}>
-                フォーム管理へ
+              <Button size="sm" variant="outline" onClick={() => setShowAssignModal(true)}>
+                フォームを割り当てる
               </Button>
             </div>
           ) : (
@@ -204,7 +243,7 @@ export default function AgencyClientDetailPage() {
                   const lic = LICENSE_CONFIG[f.licenseStatus] || LICENSE_CONFIG.PENDING
                   const LicIcon = lic.icon
                   return (
-                    <tr key={f.id} className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]">
+                    <tr key={f.id} className="border-b border-[hsl(var(--border))] last:border-0 hover:bg-[hsl(var(--accent))]">
                       <td className="p-3 font-medium">{f.title}</td>
                       <td className="p-3">
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -215,23 +254,24 @@ export default function AgencyClientDetailPage() {
                       </td>
                       <td className="p-3">
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${lic.color}`}>
-                          <LicIcon size={11} />
-                          {lic.label}
+                          <LicIcon size={11} />{lic.label}
                         </span>
                       </td>
                       <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
-                        {f.licenseExpiresAt
-                          ? new Date(f.licenseExpiresAt).toLocaleDateString('ja-JP')
-                          : '—'}
+                        {f.licenseExpiresAt ? new Date(f.licenseExpiresAt).toLocaleDateString('ja-JP') : '—'}
                       </td>
                       <td className="p-3">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => router.push(`/agency/forms/${f.id}/edit`)}
-                        >
-                          編集
-                        </Button>
+                        <div className="flex gap-1 justify-end">
+                          <Button size="sm" variant="ghost"
+                            onClick={() => router.push(`/forms/${f.id}/edit?back=/agency/clients/${clientId}`)}>
+                            編集
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]"
+                            disabled={assigning}
+                            onClick={() => handleUnassign(f.id)}>
+                            <X size={14} />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -241,6 +281,70 @@ export default function AgencyClientDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* フォーム割り当てモーダル */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowAssignModal(false)}>
+          <div className="bg-[hsl(var(--card))] rounded-lg p-6 w-full max-w-lg shadow-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-base">フォームを割り当て</h2>
+              <button onClick={() => setShowAssignModal(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+              「{relation?.client.name || relation?.client.email}」に割り当てるフォームを選択してください
+            </p>
+            <div className="overflow-y-auto flex-1 space-y-2">
+              {allForms.length === 0 ? (
+                <p className="text-sm text-center text-[hsl(var(--muted-foreground))] py-8">
+                  フォームがありません
+                </p>
+              ) : (
+                allForms.map((f) => {
+                  const isAssignedToThis = f.clientId === clientId
+                  const isAssignedToOther = f.clientId !== null && f.clientId !== clientId
+                  return (
+                    <div
+                      key={f.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                        isAssignedToThis
+                          ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.05)]'
+                          : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{f.title}</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                          {isAssignedToThis ? '✓ このクライアントに割り当て済み'
+                            : isAssignedToOther ? '他のクライアントに割り当て済み'
+                            : '未割り当て'}
+                        </p>
+                      </div>
+                      <div className="ml-3 shrink-0">
+                        {isAssignedToThis ? (
+                          <Button size="sm" variant="outline" disabled={assigning}
+                            onClick={() => handleUnassign(f.id)}>
+                            解除
+                          </Button>
+                        ) : (
+                          <Button size="sm" disabled={assigning}
+                            onClick={() => handleAssign(f.id)}>
+                            割り当て
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+            <Button variant="outline" className="mt-4" onClick={() => setShowAssignModal(false)}>
+              閉じる
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
