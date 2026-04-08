@@ -9,14 +9,53 @@ datasource db {
 }
 
 model User {
+  id             String         @id @default(cuid())
+  clerkId        String         @unique
+  email          String
+  name           String?
+  role           UserRole       @default(CLIENT)
+  plan           Plan           @default(STARTER)
+  forms          Form[]         @relation("AgencyForms")
+  clientForms    Form[]         @relation("ClientForms")
+  agencyClients  AgencyClient[] @relation("AgencyToClient")
+  clientAgencies AgencyClient[] @relation("ClientToAgency")
+  invitations    Invitation[]
+  createdAt      DateTime       @default(now())
+}
+
+model AgencyClient {
   id        String   @id @default(cuid())
-  clerkId   String   @unique
+  agencyId  String
+  agency    User     @relation("AgencyToClient", fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ClientToAgency", fields: [clientId], references: [id], onDelete: Cascade)
+  logoUrl   String?
+  createdAt DateTime @default(now())
+
+  @@unique([agencyId, clientId])
+  @@index([agencyId])
+  @@index([clientId])
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  agencyId  String
+  agency    User             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   email     String
   name      String?
-  role      UserRole @default(CLIENT)
-  plan      Plan     @default(STARTER)
-  forms     Form[]
-  createdAt DateTime @default(now())
+  token     String           @unique @default(cuid())
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([agencyId])
+  @@index([token])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
 }
 
 enum UserRole {
@@ -32,23 +71,39 @@ enum Plan {
 }
 
 model Form {
-  id          String     @id @default(cuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id])
-  title       String
-  description String?
-  status      FormStatus @default(DRAFT)
-  settings    Json       @default("{}")
-  steps       Step[]
-  responses   Response[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id               String        @id @default(cuid())
+  userId           String
+  user             User          @relation("AgencyForms", fields: [userId], references: [id])
+  clientId         String?
+  client           User?         @relation("ClientForms", fields: [clientId], references: [id])
+  title            String
+  description      String?
+  status           FormStatus    @default(DRAFT)
+  settings         Json          @default("{}")
+  steps            Step[]
+  responses        Response[]
+  licenseStatus    LicenseStatus @default(PENDING)
+  licenseExpiresAt DateTime?
+  dataDeleteAt     DateTime?
+  stripePaymentId  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([clientId])
 }
 
 enum FormStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+enum LicenseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  DELETED
 }
 
 model Step {

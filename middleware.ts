@@ -4,10 +4,12 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/f/(.*)',
+  '/invite/(.*)',
   '/api/forms/(.*)/submit',
   '/api/forms/(.*)/definition',
   '/api/forms/(.*)/events',
   '/api/forms/(.*)/upload',
+  '/api/invite/(.*)',
   '/embed.js',
   '/embed-direct.js',
 ])
