@@ -200,7 +200,7 @@ export default function AgencyFormResponsesPage() {
 
       {filteredResponses.length === 0 ? (
         <Card>
-          <CardContent className="py-20 text-center text-[hsl(var(--muted-foreground))]">
+          <CardContent className="py-20 pt-20 text-center text-[hsl(var(--muted-foreground))]">
             {responses.length === 0 ? 'まだ送信データがありません' : '該当するデータがありません'}
           </CardContent>
         </Card>

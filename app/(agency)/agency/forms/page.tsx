@@ -77,7 +77,7 @@ function FormCard({
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-5">
+      <CardContent className="p-5 pt-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold truncate cursor-pointer hover:text-[hsl(var(--primary))]" onClick={onEdit}>

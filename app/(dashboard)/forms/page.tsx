@@ -282,7 +282,7 @@ export default function DashboardPage() {
         </div>
       ) : forms.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20">
+          <CardContent className="flex flex-col items-center justify-center py-20 pt-20">
             <p className="text-[hsl(var(--muted-foreground))] mb-4">
               {isClient ? 'まだフォームが割り当てられていません' : 'まだフォームがありません'}
             </p>

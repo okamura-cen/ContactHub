@@ -49,7 +49,7 @@ export default function AdminAgenciesPage() {
       {!loading && (
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card>
-            <CardContent className="p-5 flex items-center gap-4">
+            <CardContent className="p-5 pt-5 flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                 <Building2 size={20} className="text-blue-600" />
               </div>
@@ -60,7 +60,7 @@ export default function AdminAgenciesPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-5 flex items-center gap-4">
+            <CardContent className="p-5 pt-5 flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <Users size={20} className="text-green-600" />
               </div>
@@ -71,7 +71,7 @@ export default function AdminAgenciesPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-5 flex items-center gap-4">
+            <CardContent className="p-5 pt-5 flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                 <ShieldCheck size={20} className="text-purple-600" />
               </div>

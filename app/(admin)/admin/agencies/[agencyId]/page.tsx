@@ -114,7 +114,7 @@ export default function AdminAgencyDetailPage() {
       {/* サマリー */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-4 pt-4 flex items-center gap-3">
             <Users size={18} className="text-blue-500" />
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">クライアント</p>
@@ -123,7 +123,7 @@ export default function AdminAgencyDetailPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-4 pt-4 flex items-center gap-3">
             <FileText size={18} className="text-indigo-500" />
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">フォーム</p>
@@ -132,7 +132,7 @@ export default function AdminAgencyDetailPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-4 pt-4 flex items-center gap-3">
             <Globe size={18} className="text-green-500" />
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">有効ライセンス</p>
