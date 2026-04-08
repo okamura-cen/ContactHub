@@ -16,9 +16,13 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
 
-    // ユーザーのフォーム一覧を取得
+    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
+    const formWhere = user.role === 'CLIENT'
+      ? { clientId: user.id }
+      : { userId: user.id }
+
     const forms = await prisma.form.findMany({
-      where: { userId: user.id },
+      where: formWhere,
       select: { id: true, title: true },
     })
     const formIds = forms.map((f) => f.id)

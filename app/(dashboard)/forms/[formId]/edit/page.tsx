@@ -53,6 +53,14 @@ export default function FormBuilderPage() {
   const [loading, setLoading] = useState(true)
   const [showEmbed, setShowEmbed] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  // ユーザーロールの確認
+  useEffect(() => {
+    fetch('/api/me').then((r) => r.json()).then((u) => {
+      if (u.role === 'CLIENT') setIsClient(true)
+    }).catch(() => {})
+  }, [])
 
   // フォームデータの読み込み
   useEffect(() => {
@@ -300,13 +308,13 @@ export default function FormBuilderPage() {
           />
         </div>
         <div className="flex items-center gap-2">
-          {/* ライセンス状態バッジ */}
-          {licenseStatus === 'ACTIVE' && (
+          {/* ライセンス状態バッジ（代理店のみ） */}
+          {!isClient && licenseStatus === 'ACTIVE' && (
             <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
               ライセンス有効
             </span>
           )}
-          {(licenseStatus === 'PENDING' || licenseStatus === 'EXPIRED') && (
+          {!isClient && (licenseStatus === 'PENDING' || licenseStatus === 'EXPIRED') && (
             <Button
               size="sm"
               variant="outline"
@@ -317,9 +325,11 @@ export default function FormBuilderPage() {
               {purchasingLicense ? '処理中...' : licenseStatus === 'EXPIRED' ? 'ライセンスを更新' : 'ライセンスを購入（¥10,000/年）'}
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
-            設定
-          </Button>
+          {!isClient && (
+            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
+              設定
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -327,21 +337,25 @@ export default function FormBuilderPage() {
           >
             プレビュー
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowEmbed(true)}>
-            埋め込みコード
-          </Button>
+          {!isClient && (
+            <Button variant="outline" size="sm" onClick={() => setShowEmbed(true)}>
+              埋め込みコード
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
             {saving ? '保存中...' : '保存'}
           </Button>
-          <Button
-            size="sm"
-            variant={formStatus === 'PUBLISHED' ? 'outline' : 'default'}
-            onClick={() => handleSave(true)}
-            disabled={saving || (formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE')}
-            title={formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE' ? 'ライセンスを購入すると公開できます' : ''}
-          >
-            {formStatus === 'PUBLISHED' ? '非公開にする' : '公開する'}
-          </Button>
+          {!isClient && (
+            <Button
+              size="sm"
+              variant={formStatus === 'PUBLISHED' ? 'outline' : 'default'}
+              onClick={() => handleSave(true)}
+              disabled={saving || (formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE')}
+              title={formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE' ? 'ライセンスを購入すると公開できます' : ''}
+            >
+              {formStatus === 'PUBLISHED' ? '非公開にする' : '公開する'}
+            </Button>
+          )}
         </div>
       </div>
 

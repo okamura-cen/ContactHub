@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
 import { MoreHorizontal, Eye, Inbox, BarChart2, Copy, Trash2, Send } from 'lucide-react'
 
+type UserRole = 'SUPER_ADMIN' | 'AGENCY' | 'CLIENT'
+
 interface FormItem {
   id: string
   title: string
@@ -27,10 +29,11 @@ const statusLabels: Record<string, { label: string; variant: 'secondary' | 'succ
 
 /** フォームカード（ドロップダウンメニュー付き） */
 function FormCard({
-  form, statusInfo, onEdit, onToggleStatus, onPreview, onDuplicate, onResponses, onAnalytics, onDelete,
+  form, statusInfo, isClient, onEdit, onToggleStatus, onPreview, onDuplicate, onResponses, onAnalytics, onDelete,
 }: {
   form: FormItem
   statusInfo: { label: string; variant: 'secondary' | 'success' | 'outline' }
+  isClient: boolean
   onEdit: () => void
   onToggleStatus: () => void
   onPreview: () => void
@@ -76,7 +79,7 @@ function FormCard({
                   { label: 'プレビュー', icon: Eye, action: onPreview },
                   { label: '送信データ', icon: Inbox, action: onResponses },
                   { label: '分析', icon: BarChart2, action: onAnalytics },
-                  { label: '複製', icon: Copy, action: onDuplicate },
+                  ...(!isClient ? [{ label: '複製', icon: Copy, action: onDuplicate }] : []),
                 ].map(({ label, icon: Icon, action }) => (
                   <button
                     key={label}
@@ -87,14 +90,18 @@ function FormCard({
                     {label}
                   </button>
                 ))}
-                <div className="border-t border-[hsl(var(--border))] my-1" />
-                <button
-                  className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] text-[hsl(var(--destructive))] transition-colors flex items-center gap-2.5"
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
-                >
-                  <Trash2 size={14} />
-                  削除
-                </button>
+                {!isClient && (
+                  <>
+                    <div className="border-t border-[hsl(var(--border))] my-1" />
+                    <button
+                      className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] text-[hsl(var(--destructive))] transition-colors flex items-center gap-2.5"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
+                    >
+                      <Trash2 size={14} />
+                      削除
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -112,9 +119,11 @@ function FormCard({
         {/* アクションボタン */}
         <div className="flex gap-2.5" onClick={(e) => e.stopPropagation()}>
           <Button onClick={onEdit} className="flex-1">編集する</Button>
-          <Button variant="outline" onClick={onToggleStatus} className="flex-1">
-            {form.status === 'PUBLISHED' ? '非公開にする' : '公開する'}
-          </Button>
+          {!isClient && (
+            <Button variant="outline" onClick={onToggleStatus} className="flex-1">
+              {form.status === 'PUBLISHED' ? '非公開にする' : '公開する'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -132,9 +141,14 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FormItem | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [userRole, setUserRole] = useState<UserRole>('AGENCY')
+  const isClient = userRole === 'CLIENT'
 
   useEffect(() => {
     fetchForms()
+    fetch('/api/me').then((r) => r.json()).then((u) => {
+      if (u.role) setUserRole(u.role as UserRole)
+    }).catch(() => {})
   }, [])
 
   const fetchForms = async () => {
@@ -252,12 +266,14 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold">フォーム一覧</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-            作成したフォームの管理・編集ができます
+            {isClient ? '割り当てられたフォームを確認・編集できます' : '作成したフォームの管理・編集ができます'}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)}>
-          + 新規作成
-        </Button>
+        {!isClient && (
+          <Button onClick={() => setShowNewDialog(true)}>
+            + 新規作成
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -268,11 +284,13 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-20">
             <p className="text-[hsl(var(--muted-foreground))] mb-4">
-              まだフォームがありません
+              {isClient ? 'まだフォームが割り当てられていません' : 'まだフォームがありません'}
             </p>
-            <Button onClick={() => setShowNewDialog(true)}>
-              最初のフォームを作成
-            </Button>
+            {!isClient && (
+              <Button onClick={() => setShowNewDialog(true)}>
+                最初のフォームを作成
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -284,6 +302,7 @@ export default function DashboardPage() {
                 key={form.id}
                 form={form}
                 statusInfo={statusInfo}
+                isClient={isClient}
                 onEdit={() => router.push(`/forms/${form.id}/edit`)}
                 onToggleStatus={() => handleToggleStatus(form.id, form.status)}
                 onPreview={() => window.open(`/f/${form.id}?preview=true`, '_blank')}

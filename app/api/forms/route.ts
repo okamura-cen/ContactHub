@@ -15,8 +15,13 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
+    const where = user.role === 'CLIENT'
+      ? { clientId: user.id }
+      : { userId: user.id }
+
     const forms = await prisma.form.findMany({
-      where: { userId: user.id },
+      where,
       include: {
         _count: { select: { responses: true } },
         steps: { include: { fields: true }, orderBy: { order: 'asc' } },

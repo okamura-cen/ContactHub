@@ -11,8 +11,13 @@ export async function GET() {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
+    const formWhere = user.role === 'CLIENT'
+      ? { clientId: user.id }
+      : { userId: user.id }
+
     const forms = await prisma.form.findMany({
-      where: { userId: user.id },
+      where: formWhere,
       select: { id: true },
     })
     const formIds = forms.map((f) => f.id)
@@ -31,8 +36,8 @@ export async function GET() {
       weekResponses,
       recentResponses,
     ] = await Promise.all([
-      prisma.form.count({ where: { userId: user.id } }),
-      prisma.form.count({ where: { userId: user.id, status: 'PUBLISHED' } }),
+      prisma.form.count({ where: formWhere }),
+      prisma.form.count({ where: { ...formWhere, status: 'PUBLISHED' } }),
       prisma.response.count({ where: { formId: { in: formIds } } }),
       prisma.response.count({ where: { formId: { in: formIds }, isRead: false } }),
       prisma.response.count({ where: { formId: { in: formIds }, responseStatus: 'PENDING' } }),

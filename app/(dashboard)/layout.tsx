@@ -20,10 +20,16 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
+      if (u.role === 'CLIENT') {
+        setIsClient(true)
+        if (u.agencyInfo) setAgencyInfo(u.agencyInfo)
+      }
     }).catch(() => {})
   }, [])
 
@@ -38,9 +44,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* サイドバー */}
         <aside className="hidden md:flex w-56 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
           <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
-            <Link href="/">
-              <Image src="/contacthub_logo_yoko.svg" alt="ContactHub" width={180} height={40} style={{ width: '100%', height: 'auto' }} priority />
-            </Link>
+            {/* クライアントにはロゴを表示（代理店が設定した場合） */}
+            {isClient && agencyInfo?.logoUrl ? (
+              <Link href="/">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={agencyInfo.logoUrl} alt="logo" className="h-8 object-contain" />
+              </Link>
+            ) : (
+              <Link href="/">
+                <Image src="/contacthub_logo_yoko.svg" alt="ContactHub" width={180} height={40} style={{ width: '100%', height: 'auto' }} priority />
+              </Link>
+            )}
           </div>
           <nav className="flex-1 p-3 space-y-0.5">
             {navItems.map((item) => {
@@ -71,6 +85,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             )}
           </nav>
+          {/* クライアントに担当代理店を表示 */}
+          {isClient && agencyInfo && (
+            <div className="px-4 py-3 border-t border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="font-medium text-[hsl(var(--foreground))]">担当</p>
+              <p className="truncate mt-0.5">{agencyInfo.name}</p>
+            </div>
+          )}
           <div className="p-4 border-t border-[hsl(var(--border))]">
             <UserButton signInUrl="/sign-in" />
           </div>
