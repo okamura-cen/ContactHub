@@ -26,9 +26,14 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
     notFound()
   }
 
-  // プレビューモード以外では公開済みのみ表示
-  if (form.status !== 'PUBLISHED' && preview !== 'true') {
-    notFound()
+  // プレビューモード以外では公開済みかつライセンス有効のみ表示
+  if (preview !== 'true') {
+    if (form.status !== 'PUBLISHED') {
+      notFound()
+    }
+    if (form.licenseStatus !== 'ACTIVE') {
+      notFound()
+    }
   }
 
   const builderSteps = form.steps.map((s) => ({
