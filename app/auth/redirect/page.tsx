@@ -22,7 +22,7 @@ export default function AuthRedirectPage() {
           if (user.role === 'SUPER_ADMIN') {
             router.replace('/admin/users')
           } else if (user.role === 'AGENCY') {
-            router.replace('/agency')
+            router.replace('/')
           } else {
             router.replace('/')
           }

@@ -37,7 +37,7 @@ interface Relation {
   client: ClientDetail
 }
 
-export default function AgencyClientDetailPage() {
+export default function ClientDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
@@ -67,7 +67,7 @@ export default function AgencyClientDetailPage() {
         setRelation(found)
         setLogoUrl(found.logoUrl || '')
       } else {
-        router.push('/agency/clients')
+        router.push('/clients')
       }
     }
     if (assignedRes.ok) setForms(await assignedRes.json())
@@ -141,7 +141,7 @@ export default function AgencyClientDetailPage() {
     <div>
       {/* ヘッダー */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.push('/agency/clients')}>
+        <Button variant="ghost" size="sm" onClick={() => router.push('/clients')}>
           <ArrowLeft size={16} className="mr-1" />
           一覧へ
         </Button>
@@ -263,7 +263,7 @@ export default function AgencyClientDetailPage() {
                       <td className="p-3">
                         <div className="flex gap-1 justify-end">
                           <Button size="sm" variant="ghost"
-                            onClick={() => router.push(`/forms/${f.id}/edit?back=/agency/clients/${clientId}`)}>
+                            onClick={() => router.push(`/forms/${f.id}/edit?back=/clients/${clientId}`)}>
                             編集
                           </Button>
                           <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]"

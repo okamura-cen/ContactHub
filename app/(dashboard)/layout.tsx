@@ -6,26 +6,28 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
-import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck, Users } from 'lucide-react'
 
 const navItems = [
-  { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard, clientHidden: false },
-  { href: '/forms',     label: 'フォーム管理',   icon: FileText,        clientHidden: false },
-  { href: '/responses', label: '送信データ',     icon: Inbox,           clientHidden: false },
-  { href: '/analytics', label: '分析',           icon: BarChart2,       clientHidden: false },
-  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true  },
+  { href: '/',          label: 'ダッシュボード',   icon: LayoutDashboard, clientHidden: false, agencyOnly: false },
+  { href: '/forms',     label: 'フォーム管理',     icon: FileText,        clientHidden: false, agencyOnly: false },
+  { href: '/clients',   label: 'クライアント管理', icon: Users,           clientHidden: true,  agencyOnly: true  },
+  { href: '/responses', label: '送信データ',       icon: Inbox,           clientHidden: false, agencyOnly: false },
+  { href: '/analytics', label: '分析',             icon: BarChart2,       clientHidden: false, agencyOnly: false },
+  { href: '/settings',  label: '設定',             icon: Settings,        clientHidden: true,  agencyOnly: false },
 ]
 
-/** サイドバー付きダッシュボードレイアウト */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [isAgency, setIsAgency] = useState(false)
+  const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
+      if (u.role === 'AGENCY') setIsAgency(true)
       if (u.role === 'CLIENT') {
         setIsClient(true)
         if (u.agencyInfo) setAgencyInfo(u.agencyInfo)
@@ -38,13 +40,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return pathname.startsWith(href)
   }
 
+  const visibleItems = navItems.filter((item) => {
+    if (isClient && item.clientHidden) return false
+    if (item.agencyOnly && !isAgency) return false
+    return true
+  })
+
   return (
     <ToastProvider>
       <div className="flex min-h-screen">
         {/* サイドバー */}
         <aside className="hidden md:flex w-56 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
           <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
-            {/* クライアントにはロゴを表示（代理店が設定した場合） */}
             {isClient && agencyInfo?.logoUrl ? (
               <Link href="/">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -57,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           <nav className="flex-1 p-3 space-y-0.5">
-            {navItems.filter((item) => !(isClient && item.clientHidden)).map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
               return (
@@ -85,7 +92,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             )}
           </nav>
-          {/* クライアントに担当代理店を表示 */}
           {isClient && agencyInfo && (
             <div className="px-4 py-3 border-t border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))]">
               <p className="font-medium text-[hsl(var(--foreground))]">担当</p>
@@ -99,7 +105,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* メインコンテンツ */}
         <main className="flex-1 overflow-auto min-w-0">
-          {/* モバイルヘッダー */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-[hsl(var(--border))]">
             <Link href="/">
               <Image src="/contacthub_logo_tate.svg" alt="ContactHub" width={100} height={44} priority />

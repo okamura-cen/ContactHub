@@ -23,7 +23,7 @@ interface ClientRelation {
 
 const emptyForm = { name: '', email: '', password: '' }
 
-export default function AgencyClientsPage() {
+export default function ClientsPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [relations, setRelations] = useState<ClientRelation[]>([])
@@ -183,7 +183,7 @@ export default function AgencyClientsPage() {
                   <tr
                     key={rel.id}
                     className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] cursor-pointer"
-                    onClick={() => router.push(`/agency/clients/${rel.client.id}`)}
+                    onClick={() => router.push(`/clients/${rel.client.id}`)}
                   >
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function AgencyClientsPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => router.push(`/agency/clients/${rel.client.id}`)}
+                          onClick={() => router.push(`/clients/${rel.client.id}`)}
                         >
                           <ChevronRight size={16} />
                         </Button>

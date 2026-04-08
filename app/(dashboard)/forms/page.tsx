@@ -2,16 +2,251 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
-import { MoreHorizontal, Eye, Inbox, BarChart2, Copy, Trash2, Send } from 'lucide-react'
+import {
+  MoreHorizontal, Eye, Inbox, BarChart2, Copy, Trash2, Send,
+  Plus, Pencil, UserCheck, CheckCircle, Clock, XCircle,
+} from 'lucide-react'
 
-type UserRole = 'SUPER_ADMIN' | 'AGENCY' | 'CLIENT'
+// ============================================================
+// AGENCY フォーム管理
+// ============================================================
+
+const LICENSE_CONFIG = {
+  PENDING:  { label: '未決済',   color: 'bg-yellow-100 text-yellow-700', icon: Clock },
+  ACTIVE:   { label: '有効',     color: 'bg-green-100 text-green-700',   icon: CheckCircle },
+  EXPIRED:  { label: '期限切れ', color: 'bg-red-100 text-red-700',       icon: XCircle },
+  DELETED:  { label: '削除済み', color: 'bg-gray-100 text-gray-500',     icon: XCircle },
+} as const
+
+const STATUS_CONFIG = {
+  DRAFT:     { label: '下書き',     color: 'bg-gray-100 text-gray-600' },
+  PUBLISHED: { label: '公開中',     color: 'bg-green-100 text-green-700' },
+  ARCHIVED:  { label: 'アーカイブ', color: 'bg-gray-100 text-gray-400' },
+} as const
+
+interface AgencyForm {
+  id: string
+  title: string
+  status: keyof typeof STATUS_CONFIG
+  licenseStatus: keyof typeof LICENSE_CONFIG
+  licenseExpiresAt: string | null
+  clientId: string | null
+  client: { id: string; name: string | null; email: string } | null
+  updatedAt: string
+  _count: { responses: number }
+}
+
+interface ClientOption {
+  client: { id: string; name: string | null; email: string }
+}
+
+function AgencyFormCard({
+  form, clients, onEdit, onDelete, onAssignClient, onResponses, onPreview,
+}: {
+  form: AgencyForm
+  clients: ClientOption[]
+  onEdit: () => void
+  onDelete: () => void
+  onAssignClient: (clientId: string | null) => void
+  onResponses: () => void
+  onPreview: () => void
+}) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const lic = LICENSE_CONFIG[form.licenseStatus]
+  const LicIcon = lic.icon
+  const st = STATUS_CONFIG[form.status]
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-5 pt-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold truncate cursor-pointer hover:text-[hsl(var(--primary))]" onClick={onEdit}>{form.title}</h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</p>
+          </div>
+          <div ref={menuRef} className="relative">
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}>
+              <MoreHorizontal size={16} />
+            </Button>
+            {menuOpen && (
+              <div className="absolute right-0 top-9 z-20 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 w-44">
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { onEdit(); setMenuOpen(false) }}><Pencil size={14} /> 編集する</button>
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { onPreview(); setMenuOpen(false) }}><Eye size={14} /> プレビュー</button>
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { onResponses(); setMenuOpen(false) }}><Inbox size={14} /> 送信データ</button>
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { setAssignOpen(true); setMenuOpen(false) }}><UserCheck size={14} /> クライアント割り当て</button>
+                <hr className="my-1 border-[hsl(var(--border))]" />
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--accent))]" onClick={() => { onDelete(); setMenuOpen(false) }}><Trash2 size={14} /> 削除</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.color}`}>{st.label}</span>
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${lic.color}`}><LicIcon size={10} />{lic.label}</span>
+          {form.client ? (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">{form.client.name || form.client.email}</span>
+          ) : (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-400">未割り当て</span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[hsl(var(--muted-foreground))]">送信 {form._count.responses}件</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>
+              <UserCheck size={14} className="mr-1" />クライアント
+            </Button>
+            <Button size="sm" onClick={onEdit}>編集する</Button>
+          </div>
+        </div>
+      </CardContent>
+
+      {assignOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setAssignOpen(false)}>
+          <div className="bg-[hsl(var(--card))] rounded-lg p-6 w-full max-w-sm shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold mb-1">クライアント割り当て</h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">「{form.title}」を担当クライアントに割り当てます</p>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              <button className={`w-full text-left px-3 py-2 rounded-md text-sm border transition-colors ${!form.clientId ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.05)]' : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]'}`}
+                onClick={() => { onAssignClient(null); setAssignOpen(false) }}>
+                <span className="text-[hsl(var(--muted-foreground))]">割り当てなし</span>
+              </button>
+              {clients.map((rel) => (
+                <button key={rel.client.id}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm border transition-colors ${form.clientId === rel.client.id ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.05)]' : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]'}`}
+                  onClick={() => { onAssignClient(rel.client.id); setAssignOpen(false) }}>
+                  <p className="font-medium">{rel.client.name || '(名前なし)'}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{rel.client.email}</p>
+                </button>
+              ))}
+            </div>
+            <Button variant="outline" className="mt-4 w-full" onClick={() => setAssignOpen(false)}>キャンセル</Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function AgencyFormsPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [forms, setForms] = useState<AgencyForm[]>([])
+  const [clients, setClients] = useState<ClientOption[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filterClient, setFilterClient] = useState('')
+
+  const load = async () => {
+    setLoading(true)
+    const [formsRes, clientsRes] = await Promise.all([fetch('/api/agency/forms'), fetch('/api/agency/clients')])
+    if (formsRes.ok) setForms(await formsRes.json())
+    if (clientsRes.ok) setClients(await clientsRes.json())
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleDelete = async (form: AgencyForm) => {
+    if (!confirm(`「${form.title}」を削除しますか？この操作は元に戻せません。`)) return
+    const res = await fetch(`/api/agency/forms/${form.id}`, { method: 'DELETE' })
+    if (res.ok) { toast({ title: '削除しました', variant: 'success' }); load() }
+    else toast({ title: '削除に失敗しました', variant: 'destructive' })
+  }
+
+  const handleAssignClient = async (formId: string, clientId: string | null) => {
+    const res = await fetch(`/api/agency/forms/${formId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId }),
+    })
+    if (res.ok) { toast({ title: clientId ? 'クライアントを割り当てました' : '割り当てを解除しました', variant: 'success' }); load() }
+    else toast({ title: 'エラーが発生しました', variant: 'destructive' })
+  }
+
+  const filtered = forms.filter((f) => {
+    if (search && !f.title.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterClient === '__unassigned__' && f.clientId !== null) return false
+    if (filterClient && filterClient !== '__unassigned__' && f.clientId !== filterClient) return false
+    return true
+  })
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">フォーム管理</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{forms.length}件のフォーム</p>
+        </div>
+        <Button onClick={() => router.push('/forms/new')}>
+          <Plus size={16} className="mr-2" />新しいフォームを作成
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mb-4">
+        <Input placeholder="フォーム名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+        <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)}
+          className="h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm">
+          <option value="">すべてのクライアント</option>
+          <option value="__unassigned__">未割り当て</option>
+          {clients.map((rel) => <option key={rel.client.id} value={rel.client.id}>{rel.client.name || rel.client.email}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20 text-[hsl(var(--muted-foreground))]">
+          {forms.length === 0 ? (
+            <><p className="mb-4">まだフォームがありません</p><Button onClick={() => router.push('/forms/new')}>最初のフォームを作成する</Button></>
+          ) : '該当するフォームがありません'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filtered.map((form) => (
+            <AgencyFormCard key={form.id} form={form} clients={clients}
+              onEdit={() => router.push(`/forms/${form.id}/edit?back=/forms`)}
+              onDelete={() => handleDelete(form)}
+              onAssignClient={(clientId) => handleAssignClient(form.id, clientId)}
+              onResponses={() => router.push(`/forms/${form.id}/responses`)}
+              onPreview={() => window.open(`/f/${form.id}`, '_blank')}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// CLIENT フォーム一覧
+// ============================================================
+
+const statusLabels: Record<string, { label: string; variant: 'secondary' | 'success' | 'outline' }> = {
+  DRAFT:     { label: '下書き',   variant: 'secondary' },
+  PUBLISHED: { label: '公開中',   variant: 'success' },
+  ARCHIVED:  { label: 'アーカイブ', variant: 'outline' },
+}
 
 interface FormItem {
   id: string
@@ -21,35 +256,22 @@ interface FormItem {
   _count: { responses: number }
 }
 
-const statusLabels: Record<string, { label: string; variant: 'secondary' | 'success' | 'outline' }> = {
-  DRAFT: { label: '下書き', variant: 'secondary' },
-  PUBLISHED: { label: '公開中', variant: 'success' },
-  ARCHIVED: { label: 'アーカイブ', variant: 'outline' },
-}
-
-/** フォームカード（ドロップダウンメニュー付き） */
-function FormCard({
-  form, statusInfo, isClient, onEdit, onToggleStatus, onPreview, onDuplicate, onResponses, onAnalytics, onDelete,
+function ClientFormCard({
+  form, statusInfo, onEdit, onPreview, onResponses, onAnalytics,
 }: {
   form: FormItem
   statusInfo: { label: string; variant: 'secondary' | 'success' | 'outline' }
-  isClient: boolean
   onEdit: () => void
-  onToggleStatus: () => void
   onPreview: () => void
-  onDuplicate: () => void
   onResponses: () => void
   onAnalytics: () => void
-  onDelete: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -58,19 +280,14 @@ function FormCard({
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onEdit}>
       <CardContent className="p-6 pt-6">
-        {/* ヘッダー */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg leading-snug mb-2">{form.title}</h3>
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </div>
-          {/* ⋮ メニュー */}
           <div className="relative shrink-0" ref={menuRef}>
-            <button
-              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] transition-colors"
-              onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
-              title="その他のアクション"
-            >
+            <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] transition-colors"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}>
               <MoreHorizontal size={18} />
             </button>
             {menuOpen && (
@@ -79,288 +296,81 @@ function FormCard({
                   { label: 'プレビュー', icon: Eye, action: onPreview },
                   { label: '送信データ', icon: Inbox, action: onResponses },
                   { label: '分析', icon: BarChart2, action: onAnalytics },
-                  ...(!isClient ? [{ label: '複製', icon: Copy, action: onDuplicate }] : []),
                 ].map(({ label, icon: Icon, action }) => (
-                  <button
-                    key={label}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] transition-colors flex items-center gap-2.5"
-                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false); action() }}
-                  >
-                    <Icon size={14} className="text-[hsl(var(--muted-foreground))]" />
-                    {label}
+                  <button key={label} className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] transition-colors flex items-center gap-2.5"
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false); action() }}>
+                    <Icon size={14} className="text-[hsl(var(--muted-foreground))]" />{label}
                   </button>
                 ))}
-                {!isClient && (
-                  <>
-                    <div className="border-t border-[hsl(var(--border))] my-1" />
-                    <button
-                      className="w-full text-left px-4 py-2.5 hover:bg-[hsl(var(--accent))] text-[hsl(var(--destructive))] transition-colors flex items-center gap-2.5"
-                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
-                    >
-                      <Trash2 size={14} />
-                      削除
-                    </button>
-                  </>
-                )}
               </div>
             )}
           </div>
         </div>
-
-        {/* メタ情報 */}
         <div className="flex items-center gap-5 text-sm text-[hsl(var(--muted-foreground))] mb-5 mt-4">
-          <span className="flex items-center gap-1.5">
-            <Send size={13} />
-            送信 <strong className="text-[hsl(var(--foreground))]">{form._count.responses}</strong>件
-          </span>
+          <span className="flex items-center gap-1.5"><Send size={13} />送信 <strong className="text-[hsl(var(--foreground))]">{form._count.responses}</strong>件</span>
           <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
         </div>
-
-        {/* アクションボタン */}
         <div className="flex gap-2.5" onClick={(e) => e.stopPropagation()}>
           <Button onClick={onEdit} className="flex-1">編集する</Button>
-          {!isClient && (
-            <Button variant="outline" onClick={onToggleStatus} className="flex-1">
-              {form.status === 'PUBLISHED' ? '非公開にする' : '公開する'}
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
   )
 }
 
-/** ダッシュボード：フォーム一覧ページ */
-export default function DashboardPage() {
+function ClientFormsPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [forms, setForms] = useState<FormItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [showNewDialog, setShowNewDialog] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<FormItem | null>(null)
-  const [deleting, setDeleting] = useState(false)
-  const [userRole, setUserRole] = useState<UserRole>('AGENCY')
-  const isClient = userRole === 'CLIENT'
 
   useEffect(() => {
-    fetchForms()
-    fetch('/api/me').then((r) => r.json()).then((u) => {
-      if (u.role) setUserRole(u.role as UserRole)
-    }).catch(() => {})
+    fetch('/api/forms').then((r) => r.json()).then(setForms)
+      .catch(() => toast({ title: 'フォームの取得に失敗しました', variant: 'destructive' }))
+      .finally(() => setLoading(false))
   }, [])
-
-  const fetchForms = async () => {
-    try {
-      const res = await fetch('/api/forms')
-      if (res.ok) {
-        const data = await res.json()
-        setForms(data)
-      }
-    } catch {
-      toast({ title: 'フォームの取得に失敗しました', variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCreate = async () => {
-    if (!newTitle.trim()) return
-    setCreating(true)
-    try {
-      const res = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle }),
-      })
-      if (res.ok) {
-        const form = await res.json()
-        router.push(`/forms/${form.id}/edit`)
-      } else {
-        toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: 'フォームの作成に失敗しました', variant: 'destructive' })
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/forms/${deleteTarget.id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast({ title: 'フォームを削除しました', variant: 'success' })
-        setDeleteTarget(null)
-        fetchForms()
-      } else {
-        toast({ title: '削除に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: '削除に失敗しました', variant: 'destructive' })
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  const handleToggleStatus = async (formId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
-    try {
-      const res = await fetch(`/api/forms/${formId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (res.ok) {
-        toast({
-          title: newStatus === 'PUBLISHED' ? 'フォームを公開しました' : 'フォームを非公開にしました',
-          variant: 'success',
-        })
-        fetchForms()
-      } else {
-        toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
-      }
-    } catch {
-      toast({ title: 'ステータスの変更に失敗しました', variant: 'destructive' })
-    }
-  }
-
-  const handleDuplicate = async (formId: string) => {
-    try {
-      const res = await fetch(`/api/forms/${formId}`)
-      if (!res.ok) return
-      const original = await res.json()
-
-      const createRes = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: `${original.title} (コピー)` }),
-      })
-      if (createRes.ok) {
-        const newForm = await createRes.json()
-        // ステップとフィールドをIDを振り直してコピー
-        const newSteps = (original.steps || []).map((s: { id: string; title: string; fields: { id: string; [key: string]: unknown }[] }) => ({
-          ...s,
-          id: crypto.randomUUID(),
-          fields: (s.fields || []).map((f) => ({ ...f, id: crypto.randomUUID() })),
-        }))
-        await fetch(`/api/forms/${newForm.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ steps: newSteps }),
-        })
-        toast({ title: 'フォームを複製しました', variant: 'success' })
-        fetchForms()
-      }
-    } catch {
-      toast({ title: '複製に失敗しました', variant: 'destructive' })
-    }
-  }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">フォーム一覧</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-            {isClient ? '割り当てられたフォームを確認・編集できます' : '作成したフォームの管理・編集ができます'}
-          </p>
-        </div>
-        {!isClient && (
-          <Button onClick={() => setShowNewDialog(true)}>
-            + 新規作成
-          </Button>
-        )}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">フォーム管理</h1>
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">割り当てられたフォームを確認・編集できます</p>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" />
-        </div>
+        <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>
       ) : forms.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20 pt-20">
-            <p className="text-[hsl(var(--muted-foreground))] mb-4">
-              {isClient ? 'まだフォームが割り当てられていません' : 'まだフォームがありません'}
-            </p>
-            {!isClient && (
-              <Button onClick={() => setShowNewDialog(true)}>
-                最初のフォームを作成
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <Card><CardContent className="flex flex-col items-center justify-center py-20 pt-20">
+          <p className="text-[hsl(var(--muted-foreground))]">まだフォームが割り当てられていません</p>
+        </CardContent></Card>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
-          {forms.map((form) => {
-            const statusInfo = statusLabels[form.status]
-            return (
-              <FormCard
-                key={form.id}
-                form={form}
-                statusInfo={statusInfo}
-                isClient={isClient}
-                onEdit={() => router.push(`/forms/${form.id}/edit`)}
-                onToggleStatus={() => handleToggleStatus(form.id, form.status)}
-                onPreview={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
-                onDuplicate={() => handleDuplicate(form.id)}
-                onResponses={() => router.push(`/forms/${form.id}/responses`)}
-                onAnalytics={() => router.push(`/forms/${form.id}/analytics`)}
-                onDelete={() => setDeleteTarget(form)}
-              />
-            )
-          })}
+          {forms.map((form) => (
+            <ClientFormCard key={form.id} form={form} statusInfo={statusLabels[form.status]}
+              onEdit={() => router.push(`/forms/${form.id}/edit`)}
+              onPreview={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
+              onResponses={() => router.push(`/forms/${form.id}/responses`)}
+              onAnalytics={() => router.push(`/forms/${form.id}/analytics`)}
+            />
+          ))}
         </div>
       )}
-
-      {/* 削除確認ダイアログ */}
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogHeader>
-          <DialogTitle>フォームを削除しますか？</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            「{deleteTarget?.title}」を削除します。送信データも含めてすべて削除されます。この操作は元に戻せません。
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-            キャンセル
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? '削除中...' : '削除する'}
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* 新規作成ダイアログ */}
-      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogHeader>
-          <DialogTitle>新しいフォームを作成</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <Label htmlFor="form-title">フォームタイトル</Label>
-          <Input
-            id="form-title"
-            placeholder="例: お問い合わせフォーム"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            className="mt-2"
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowNewDialog(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleCreate} disabled={!newTitle.trim() || creating}>
-            {creating ? '作成中...' : '作成'}
-          </Button>
-        </DialogFooter>
-      </Dialog>
     </div>
   )
+}
+
+// ============================================================
+// Page entry
+// ============================================================
+
+export default function FormsPage() {
+  const [role, setRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/me').then((r) => r.json()).then((u) => setRole(u.role)).catch(() => setRole('CLIENT'))
+  }, [])
+
+  if (!role) return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>
+  if (role === 'AGENCY') return <AgencyFormsPage />
+  return <ClientFormsPage />
 }
