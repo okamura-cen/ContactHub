@@ -67,7 +67,6 @@ export default function DashboardPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">ダッシュボード</h1>
-        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">ContactHubの状況を確認できます</p>
       </div>
 
       {/* サマリーカード */}
