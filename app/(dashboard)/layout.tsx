@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
-import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck, Building2 } from 'lucide-react'
 
 const navItems = [
   { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard, clientHidden: false, agencyHidden: false },
@@ -77,6 +77,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               )
             })}
+            {isAgency && (
+              <Link
+                href="/agency"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors text-blue-600 hover:bg-blue-50 mt-2 border-t border-[hsl(var(--border))] pt-3"
+              >
+                <Building2 size={16} />
+                代理店管理画面
+              </Link>
+            )}
             {isSuperAdmin && (
               <Link
                 href="/admin/users"
