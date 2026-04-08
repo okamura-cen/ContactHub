@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
-import { LayoutDashboard, FileText, Inbox, BarChart2, Settings } from 'lucide-react'
+import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck } from 'lucide-react'
 
 const navItems = [
   { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard },
@@ -18,6 +19,13 @@ const navItems = [
 /** サイドバー付きダッシュボードレイアウト */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/me').then((r) => r.json()).then((u) => {
+      if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
+    }).catch(() => {})
+  }, [])
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -53,6 +61,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               )
             })}
+            {isSuperAdmin && (
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors text-purple-600 hover:bg-purple-50 mt-2 border-t border-[hsl(var(--border))] pt-3"
+              >
+                <ShieldCheck size={16} />
+                管理者メニュー
+              </Link>
+            )}
           </nav>
           <div className="p-4 border-t border-[hsl(var(--border))]">
             <UserButton signInUrl="/sign-in" />

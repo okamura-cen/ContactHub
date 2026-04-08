@@ -13,9 +13,16 @@ model User {
   clerkId   String   @unique
   email     String
   name      String?
+  role      UserRole @default(CLIENT)
   plan      Plan     @default(STARTER)
   forms     Form[]
   createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  AGENCY
+  CLIENT
 }
 
 enum Plan {
