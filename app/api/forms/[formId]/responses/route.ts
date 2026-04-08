@@ -19,9 +19,12 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // フォームの所有権チェック
+    // フォームのアクセス権チェック（AGENCY=userId, CLIENT=clientId）
     const form = await prisma.form.findFirst({
-      where: { id: formId, userId: user.id },
+      where: {
+        id: formId,
+        OR: [{ userId: user.id }, { clientId: user.id }],
+      },
       include: {
         steps: {
           include: { fields: { orderBy: { order: 'asc' } } },

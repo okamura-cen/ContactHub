@@ -15,7 +15,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const form = await prisma.form.findFirst({ where: { id: formId, userId: user.id } })
+    const form = await prisma.form.findFirst({
+      where: { id: formId, OR: [{ userId: user.id }, { clientId: user.id }] },
+    })
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
     const body = await req.json()
@@ -46,7 +48,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const form = await prisma.form.findFirst({ where: { id: formId, userId: user.id } })
+    const form = await prisma.form.findFirst({
+      where: { id: formId, OR: [{ userId: user.id }, { clientId: user.id }] },
+    })
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
     await prisma.response.delete({ where: { id: responseId } })
