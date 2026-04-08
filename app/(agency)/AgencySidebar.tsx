@@ -4,13 +4,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
-import { LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, Inbox, BarChart2, Settings } from 'lucide-react'
 
 const navItems = [
-  { href: '/agency',         label: 'ダッシュボード', icon: LayoutDashboard },
-  { href: '/agency/clients', label: 'クライアント管理', icon: Users },
-  { href: '/agency/forms',   label: 'フォーム管理',    icon: FileText },
-  { href: '/agency/settings',label: '設定',            icon: Settings },
+  { href: '/agency',           label: 'ダッシュボード',   icon: LayoutDashboard },
+  { href: '/agency/forms',     label: 'フォーム管理',     icon: FileText },
+  { href: '/agency/clients',   label: 'クライアント管理', icon: Users },
+  { href: '/agency/responses', label: '送信データ',       icon: Inbox },
+  { href: '/agency/analytics', label: '分析',             icon: BarChart2 },
+  { href: '/agency/settings',  label: '設定',             icon: Settings },
 ]
 
 export default function AgencySidebar({ agencyName }: { agencyName: string }) {

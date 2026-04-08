@@ -6,28 +6,26 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
-import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck, Building2 } from 'lucide-react'
+import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck } from 'lucide-react'
 
 const navItems = [
-  { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard, clientHidden: false, agencyHidden: false },
-  { href: '/forms',     label: 'フォーム管理',   icon: FileText,        clientHidden: false, agencyHidden: false },
-  { href: '/responses', label: '送信データ',     icon: Inbox,           clientHidden: false, agencyHidden: false },
-  { href: '/analytics', label: '分析',           icon: BarChart2,       clientHidden: false, agencyHidden: false },
-  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true,  agencyHidden: false },
+  { href: '/',          label: 'ダッシュボード', icon: LayoutDashboard, clientHidden: false },
+  { href: '/forms',     label: 'フォーム管理',   icon: FileText,        clientHidden: false },
+  { href: '/responses', label: '送信データ',     icon: Inbox,           clientHidden: false },
+  { href: '/analytics', label: '分析',           icon: BarChart2,       clientHidden: false },
+  { href: '/settings',  label: '設定',           icon: Settings,        clientHidden: true  },
 ]
 
 /** サイドバー付きダッシュボードレイアウト */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [isAgency, setIsAgency] = useState(false)
   const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
-      if (u.role === 'AGENCY') setIsAgency(true)
       if (u.role === 'CLIENT') {
         setIsClient(true)
         if (u.agencyInfo) setAgencyInfo(u.agencyInfo)
@@ -59,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           <nav className="flex-1 p-3 space-y-0.5">
-            {navItems.filter((item) => !(isClient && item.clientHidden) && !(isAgency && item.agencyHidden)).map((item) => {
+            {navItems.filter((item) => !(isClient && item.clientHidden)).map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
               return (
@@ -77,15 +75,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               )
             })}
-            {isAgency && (
-              <Link
-                href="/agency"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors text-blue-600 hover:bg-blue-50 mt-2 border-t border-[hsl(var(--border))] pt-3"
-              >
-                <Building2 size={16} />
-                代理店管理画面
-              </Link>
-            )}
             {isSuperAdmin && (
               <Link
                 href="/admin/users"
