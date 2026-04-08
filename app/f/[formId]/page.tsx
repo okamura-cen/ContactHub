@@ -58,6 +58,7 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
       formId={form.id}
       title={form.title}
       steps={builderSteps}
+      isPreview={preview === 'true'}
       settings={{
         successMessage: (settings?.successMessage as string) || '送信が完了しました。',
         redirectUrl: (settings?.redirectUrl as string) || undefined,

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 interface StepFormProps {
   steps: BuilderStep[]
   formId: string
+  isPreview?: boolean
   settings: {
     successMessage?: string
     redirectUrl?: string
@@ -28,7 +29,7 @@ function getSessionId(): string {
 }
 
 /** ステップ式フォーム制御コンポーネント */
-export function StepForm({ steps, formId, settings }: StepFormProps) {
+export function StepForm({ steps, formId, settings, isPreview }: StepFormProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -41,9 +42,10 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
   const formRef = useRef<HTMLDivElement>(null)
   const sessionIdRef = useRef<string>('')
 
-  // セッションID初期化 & VIEW イベント送信
+  // セッションID初期化 & VIEW イベント送信（プレビュー時はスキップ）
   useEffect(() => {
     sessionIdRef.current = getSessionId()
+    if (isPreview) return
     fetch(`/api/forms/${formId}/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -139,12 +141,14 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
   // 次へ
   const handleNext = useCallback(() => {
     if (!validateCurrentStep()) return
-    // ステップ完了イベント送信
-    fetch(`/api/forms/${formId}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'STEP_COMPLETE', stepIndex: currentStepIndex, sessionId: sessionIdRef.current }),
-    }).catch(() => {})
+    // ステップ完了イベント送信（プレビュー時はスキップ）
+    if (!isPreview) {
+      fetch(`/api/forms/${formId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'STEP_COMPLETE', stepIndex: currentStepIndex, sessionId: sessionIdRef.current }),
+      }).catch(() => {})
+    }
     if (isLastStep) {
       setShowConfirmation(true)
       return
@@ -302,9 +306,15 @@ export function StepForm({ steps, formId, settings }: StepFormProps) {
           <Button variant="outline" onClick={handleBack} className="flex-1">
             修正する
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting} className="flex-1">
-            {submitting ? '送信中...' : '送信する'}
-          </Button>
+          {isPreview ? (
+            <div className="flex-1 flex items-center justify-center rounded-md border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm text-yellow-700 font-medium">
+              プレビューのため送信できません
+            </div>
+          ) : (
+            <Button onClick={handleSubmit} disabled={submitting} className="flex-1">
+              {submitting ? '送信中...' : '送信する'}
+            </Button>
+          )}
         </div>
       </div>
     )

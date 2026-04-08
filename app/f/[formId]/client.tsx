@@ -30,6 +30,7 @@ interface PublicFormClientProps {
   formId: string
   title: string
   steps: BuilderStep[]
+  isPreview?: boolean
   settings: {
     successMessage?: string
     redirectUrl?: string
@@ -41,7 +42,7 @@ interface PublicFormClientProps {
 }
 
 /** 公開フォームのクライアントコンポーネント */
-export function PublicFormClient({ formId, title, steps, settings }: PublicFormClientProps) {
+export function PublicFormClient({ formId, title, steps, isPreview, settings }: PublicFormClientProps) {
   const { primaryColor, fontFamily, customCss, recaptchaEnabled } = settings
   const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 
@@ -57,16 +58,24 @@ export function PublicFormClient({ formId, title, steps, settings }: PublicFormC
   return (
     <div className="efo-form min-h-screen bg-[hsl(var(--secondary))] py-8 px-4" style={fontFamily ? { fontFamily } : undefined}>
       {injectedStyle && <style dangerouslySetInnerHTML={{ __html: injectedStyle }} />}
-      {recaptchaEnabled && recaptchaSiteKey && (
+      {recaptchaEnabled && recaptchaSiteKey && !isPreview && (
         // eslint-disable-next-line @next/next/no-sync-scripts
         <script src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`} />
+      )}
+      {isPreview && (
+        <div className="max-w-xl mx-auto mb-3">
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-2.5 flex items-center gap-2 text-sm text-yellow-800">
+            <span className="font-semibold">プレビューモード</span>
+            <span className="text-yellow-600">— このフォームは表示確認用です。送信はできません。</span>
+          </div>
+        </div>
       )}
       <div
         className="max-w-xl mx-auto bg-[hsl(var(--background))] rounded-lg shadow-sm border border-[hsl(var(--border))] p-6 md:p-8"
         style={primaryColor ? { '--primary': hexToHslValues(primaryColor) } as React.CSSProperties : undefined}
       >
         <h1 className="text-xl font-bold mb-6 text-center">{title}</h1>
-        <StepForm formId={formId} steps={steps} settings={settings} />
+        <StepForm formId={formId} steps={steps} settings={settings} isPreview={isPreview} />
       </div>
     </div>
   )
