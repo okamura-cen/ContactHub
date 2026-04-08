@@ -47,7 +47,9 @@ export default function FormBuilderPage() {
     autoReply: false,
   })
   const [formStatus, setFormStatus] = useState<'DRAFT' | 'PUBLISHED' | 'ARCHIVED'>('DRAFT')
+  const [licenseStatus, setLicenseStatus] = useState<'PENDING' | 'ACTIVE' | 'EXPIRED' | 'DELETED'>('PENDING')
   const [saving, setSaving] = useState(false)
+  const [purchasingLicense, setPurchasingLicense] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showEmbed, setShowEmbed] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -64,6 +66,7 @@ export default function FormBuilderPage() {
         const form = await res.json()
         setTitle(form.title)
         setFormStatus(form.status || 'DRAFT')
+        setLicenseStatus(form.licenseStatus || 'PENDING')
         setSettings({
           successMessage: (form.settings as Record<string, unknown>)?.successMessage as string || '送信が完了しました。',
           redirectUrl: (form.settings as Record<string, unknown>)?.redirectUrl as string || undefined,
@@ -212,8 +215,35 @@ export default function FormBuilderPage() {
     )
   }, [])
 
+  // ライセンス購入
+  const handlePurchaseLicense = useCallback(async () => {
+    setPurchasingLicense(true)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId }),
+      })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        window.location.href = data.url
+      } else {
+        toast({ title: data.error || 'エラーが発生しました', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'エラーが発生しました', variant: 'destructive' })
+    } finally {
+      setPurchasingLicense(false)
+    }
+  }, [formId, toast])
+
   // 保存
   const handleSave = useCallback(async (publish = false) => {
+    // 公開時はライセンス確認
+    if (publish && formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE') {
+      toast({ title: 'フォームを公開するにはライセンスの購入が必要です', variant: 'destructive' })
+      return
+    }
     setSaving(true)
     try {
       const newStatus = publish
@@ -245,7 +275,7 @@ export default function FormBuilderPage() {
     } finally {
       setSaving(false)
     }
-  }, [formId, formStatus, title, settings, steps, toast])
+  }, [formId, formStatus, licenseStatus, title, settings, steps, toast])
 
   if (loading) {
     return (
@@ -270,6 +300,23 @@ export default function FormBuilderPage() {
           />
         </div>
         <div className="flex items-center gap-2">
+          {/* ライセンス状態バッジ */}
+          {licenseStatus === 'ACTIVE' && (
+            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
+              ライセンス有効
+            </span>
+          )}
+          {(licenseStatus === 'PENDING' || licenseStatus === 'EXPIRED') && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-orange-300 text-orange-600 hover:bg-orange-50"
+              onClick={handlePurchaseLicense}
+              disabled={purchasingLicense}
+            >
+              {purchasingLicense ? '処理中...' : licenseStatus === 'EXPIRED' ? 'ライセンスを更新' : 'ライセンスを購入（¥10,000/年）'}
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
             設定
           </Button>
@@ -290,7 +337,8 @@ export default function FormBuilderPage() {
             size="sm"
             variant={formStatus === 'PUBLISHED' ? 'outline' : 'default'}
             onClick={() => handleSave(true)}
-            disabled={saving}
+            disabled={saving || (formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE')}
+            title={formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE' ? 'ライセンスを購入すると公開できます' : ''}
           >
             {formStatus === 'PUBLISHED' ? '非公開にする' : '公開する'}
           </Button>

@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/forms/(.*)/events',
   '/api/forms/(.*)/upload',
   '/api/invite/(.*)',
+  '/api/stripe/webhook',
   '/embed.js',
   '/embed-direct.js',
 ])
