@@ -13,6 +13,41 @@
 
   var baseUrl = script.src.replace(/\/embed-direct\.js.*$/, '');
 
+  // セッションID（localStorage 永続化）
+  function getSessionId() {
+    try {
+      var key = 'efo-session-id';
+      var id = localStorage.getItem(key);
+      if (!id) {
+        id = 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(key, id);
+      }
+      return id;
+    } catch (e) {
+      return 'anonymous';
+    }
+  }
+  var sessionId = getSessionId();
+
+  // イベント送信ユーティリティ
+  function sendEvent(type, stepIndex) {
+    var body = JSON.stringify({ type: type, sessionId: sessionId, stepIndex: stepIndex });
+    var url = baseUrl + '/api/forms/' + formId + '/events';
+    // 離脱でも確実に届くよう sendBeacon を優先
+    if (navigator.sendBeacon) {
+      try {
+        var blob = new Blob([body], { type: 'application/json' });
+        if (navigator.sendBeacon(url, blob)) return;
+      } catch (e) {}
+    }
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body,
+      keepalive: true,
+    }).catch(function () {});
+  }
+
   // ステート管理
   var state = {
     definition: null,
@@ -452,6 +487,8 @@
       type: 'button',
       onClick: function () {
         if (!validateStep(state.currentStep)) return;
+        // ステップ完了イベント
+        sendEvent('STEP_COMPLETE', state.currentStep);
         if (isLast) {
           submitForm();
         } else {
@@ -480,6 +517,8 @@
       .then(function (result) {
         state.submitting = false;
         if (result.success) {
+          // 送信完了イベント（リダイレクト前に sendBeacon で確実に送る）
+          sendEvent('SUBMIT');
           if (result.redirectUrl) { window.location.href = result.redirectUrl; return; }
           state.submitted = true;
         }
@@ -544,6 +583,8 @@
     .then(function (def) {
       state.definition = def;
       render();
+      // 閲覧イベント（フォーム定義の取得に成功したタイミングで送信）
+      sendEvent('VIEW');
     })
     .catch(function () {
       container.textContent = 'フォームの読み込みに失敗しました';
