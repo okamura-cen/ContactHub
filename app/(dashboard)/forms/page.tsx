@@ -48,10 +48,11 @@ interface ClientOption {
 }
 
 function AgencyFormCard({
-  form, clients, onEdit, onDelete, onAssignClient, onResponses, onPreview,
+  form, clients, isSuperAdmin, onEdit, onDelete, onAssignClient, onResponses, onPreview,
 }: {
   form: AgencyForm
   clients: ClientOption[]
+  isSuperAdmin: boolean
   onEdit: () => void
   onDelete: () => void
   onAssignClient: (clientId: string | null) => void
@@ -83,9 +84,9 @@ function AgencyFormCard({
             <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</p>
           </div>
           <div ref={menuRef} className="relative">
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0"
+            <Button size="sm" variant="ghost" className="h-10 w-10 p-0"
               onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}>
-              <MoreHorizontal size={16} />
+              <MoreHorizontal size={22} />
             </Button>
             {menuOpen && (
               <div className="absolute right-0 top-9 z-20 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 w-44">
@@ -102,7 +103,13 @@ function AgencyFormCard({
 
         <div className="flex flex-wrap gap-2 mb-4">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.color}`}>{st.label}</span>
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${lic.color}`}><LicIcon size={10} />{lic.label}</span>
+          {isSuperAdmin ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+              <CheckCircle size={10} />管理者（購入不要）
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${lic.color}`}><LicIcon size={10} />{lic.label}</span>
+          )}
           {form.client ? (
             <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">{form.client.name || form.client.email}</span>
           ) : (
@@ -156,6 +163,7 @@ function AgencyFormsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterClient, setFilterClient] = useState('')
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -165,7 +173,12 @@ function AgencyFormsPage() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    fetch('/api/me').then((r) => r.json()).then((u) => {
+      if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
+    }).catch(() => {})
+  }, [])
 
   const handleDelete = async (form: AgencyForm) => {
     if (!confirm(`「${form.title}」を削除しますか？この操作は元に戻せません。`)) return
@@ -224,7 +237,7 @@ function AgencyFormsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((form) => (
-            <AgencyFormCard key={form.id} form={form} clients={clients}
+            <AgencyFormCard key={form.id} form={form} clients={clients} isSuperAdmin={isSuperAdmin}
               onEdit={() => router.push(`/forms/${form.id}/edit?back=/forms`)}
               onDelete={() => handleDelete(form)}
               onAssignClient={(clientId) => handleAssignClient(form.id, clientId)}
