@@ -16,7 +16,10 @@ export async function GET(
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const form = await prisma.form.findFirst({
-      where: { id: formId, userId: user.id },
+      where: {
+        id: formId,
+        OR: [{ userId: user.id }, { clientId: user.id }],
+      },
       include: {
         steps: { orderBy: { order: 'asc' }, select: { id: true, title: true, order: true } },
       },

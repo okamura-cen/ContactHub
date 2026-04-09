@@ -34,7 +34,15 @@ function AnalyticsContent() {
     setLoading(true)
     fetch(`/api/forms/${selectedFormId}/analytics`)
       .then(r => r.json())
-      .then(setData)
+      .then((d) => {
+        // エラーレスポンスや不正なデータを弾く
+        if (d && Array.isArray(d.dailySubmits) && Array.isArray(d.stepStats)) {
+          setData(d)
+        } else {
+          setData(null)
+        }
+      })
+      .catch(() => setData(null))
       .finally(() => setLoading(false))
   }, [selectedFormId])
 
