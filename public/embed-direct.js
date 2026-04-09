@@ -30,19 +30,20 @@
   var sessionId = getSessionId();
 
   // イベント送信ユーティリティ
+  // NOTE: sendBeacon に文字列を渡すと text/plain で送信され CORS セーフリストに入る
+  // （Blob({type:'application/json'}) を使うとプリフライトが走り、クロスオリジンで
+  // 実POSTがサイレントに失敗するケースがあるため避ける）
   function sendEvent(type, stepIndex) {
     var body = JSON.stringify({ type: type, sessionId: sessionId, stepIndex: stepIndex });
     var url = baseUrl + '/api/forms/' + formId + '/events';
-    // 離脱でも確実に届くよう sendBeacon を優先
     if (navigator.sendBeacon) {
       try {
-        var blob = new Blob([body], { type: 'application/json' });
-        if (navigator.sendBeacon(url, blob)) return;
+        if (navigator.sendBeacon(url, body)) return;
       } catch (e) {}
     }
+    // フォールバック: fetch（プリフライト回避のため Content-Type ヘッダを指定しない）
     fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: body,
       keepalive: true,
     }).catch(function () {});
