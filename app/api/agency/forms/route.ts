@@ -57,11 +57,18 @@ export async function POST(req: NextRequest) {
     if (!hasClient) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // SUPER_ADMIN は購入不要で公開できるよう、最初からライセンスを ACTIVE・無期限にする
+  const isSuperAdmin = agency.role === 'SUPER_ADMIN'
+
   const form = await prisma.form.create({
     data: {
       title,
       userId: agency.id,
       clientId: clientId || null,
+      ...(isSuperAdmin && {
+        licenseStatus: 'ACTIVE',
+        licenseExpiresAt: null,
+      }),
       settings: {
         successMessage: '送信が完了しました。ありがとうございます。',
         notifyEmails: [],

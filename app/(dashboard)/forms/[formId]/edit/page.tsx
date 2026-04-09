@@ -55,13 +55,18 @@ function FormBuilderContent() {
   const [showEmbed, setShowEmbed] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   // ユーザーロールの確認
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
       if (u.role === 'CLIENT') setIsClient(true)
+      if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
     }).catch(() => {})
   }, [])
+
+  // SUPER_ADMIN は購入不要（常にライセンス有効として扱う）
+  const effectiveLicenseActive = isSuperAdmin || licenseStatus === 'ACTIVE'
 
   // フォームデータの読み込み
   useEffect(() => {
@@ -248,8 +253,8 @@ function FormBuilderContent() {
 
   // 保存
   const handleSave = useCallback(async (publish = false) => {
-    // 公開時はライセンス確認
-    if (publish && formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE') {
+    // 公開時はライセンス確認（SUPER_ADMIN は常にバイパス）
+    if (publish && formStatus !== 'PUBLISHED' && !effectiveLicenseActive) {
       toast({ title: 'フォームを公開するにはライセンスの購入が必要です', variant: 'destructive' })
       return
     }
@@ -284,7 +289,7 @@ function FormBuilderContent() {
     } finally {
       setSaving(false)
     }
-  }, [formId, formStatus, licenseStatus, title, settings, steps, toast])
+  }, [formId, formStatus, effectiveLicenseActive, title, settings, steps, toast])
 
   if (loading) {
     return (
@@ -310,12 +315,17 @@ function FormBuilderContent() {
         </div>
         <div className="flex items-center gap-2">
           {/* ライセンス状態バッジ（代理店のみ） */}
-          {!isClient && licenseStatus === 'ACTIVE' && (
+          {!isClient && isSuperAdmin && (
+            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
+              管理者（購入不要）
+            </span>
+          )}
+          {!isClient && !isSuperAdmin && licenseStatus === 'ACTIVE' && (
             <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
               ライセンス有効
             </span>
           )}
-          {!isClient && (licenseStatus === 'PENDING' || licenseStatus === 'EXPIRED') && (
+          {!isClient && !isSuperAdmin && (licenseStatus === 'PENDING' || licenseStatus === 'EXPIRED') && (
             <Button
               size="sm"
               variant="outline"
@@ -351,8 +361,8 @@ function FormBuilderContent() {
               size="sm"
               variant={formStatus === 'PUBLISHED' ? 'outline' : 'default'}
               onClick={() => handleSave(true)}
-              disabled={saving || (formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE')}
-              title={formStatus !== 'PUBLISHED' && licenseStatus !== 'ACTIVE' ? 'ライセンスを購入すると公開できます' : ''}
+              disabled={saving || (formStatus !== 'PUBLISHED' && !effectiveLicenseActive)}
+              title={formStatus !== 'PUBLISHED' && !effectiveLicenseActive ? 'ライセンスを購入すると公開できます' : ''}
             >
               {formStatus === 'PUBLISHED' ? '非公開にする' : '公開する'}
             </Button>
