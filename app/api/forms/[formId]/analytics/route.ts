@@ -26,14 +26,13 @@ export async function GET(
     })
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
+    // ビュー・セッション・ステップ通過はイベントから集計
     const events = await prisma.formEvent.findMany({
       where: { formId },
       orderBy: { createdAt: 'asc' },
     })
 
-    // 集計
     const views = events.filter((e) => e.type === 'VIEW').length
-    const submits = events.filter((e) => e.type === 'SUBMIT').length
     const uniqueSessions = new Set(events.map((e) => e.sessionId)).size
 
     // ステップごとの通過数
@@ -48,20 +47,26 @@ export async function GET(
       }
     })
 
-    // 直近30日の日別送信数
+    // 送信数は Response テーブル（実データ）から確実に集計する
+    // - SUBMIT イベントはリダイレクトや離脱で取りこぼしが発生するため信頼しない
+    const submits = await prisma.response.count({ where: { formId } })
+
+    // 直近30日の日別送信数（Response から）
     const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setHours(0, 0, 0, 0)
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29)
-    const submitEvents = events.filter(
-      (e) => e.type === 'SUBMIT' && new Date(e.createdAt) >= thirtyDaysAgo
-    )
+    const recentResponses = await prisma.response.findMany({
+      where: { formId, createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+    })
     const dailySubmits: Record<string, number> = {}
     for (let i = 0; i < 30; i++) {
       const d = new Date(thirtyDaysAgo)
       d.setDate(d.getDate() + i)
       dailySubmits[d.toISOString().slice(0, 10)] = 0
     }
-    submitEvents.forEach((e) => {
-      const day = new Date(e.createdAt).toISOString().slice(0, 10)
+    recentResponses.forEach((r) => {
+      const day = new Date(r.createdAt).toISOString().slice(0, 10)
       if (day in dailySubmits) dailySubmits[day]++
     })
 
