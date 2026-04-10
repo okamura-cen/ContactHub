@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { ResponseStatus } from '@prisma/client'
+import { logAudit } from '@/lib/audit'
 
 type Params = { params: Promise<{ formId: string; responseId: string }> }
 
@@ -31,6 +32,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: updateData,
     })
 
+    logAudit(req, user.id, { action: 'RESPONSE_UPDATED', resource: 'response', resourceId: responseId, detail: updateData })
+
     return NextResponse.json(updated)
   } catch (error) {
     console.error('PATCH /api/forms/[formId]/responses/[responseId] error:', error)
@@ -54,6 +57,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
     await prisma.response.delete({ where: { id: responseId } })
+
+    logAudit(_req, user.id, { action: 'RESPONSE_DELETED', resource: 'response', resourceId: responseId, detail: { formId } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

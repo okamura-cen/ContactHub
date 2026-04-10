@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAgency, agencyHasClient } from '@/lib/access'
+import { logAudit } from '@/lib/audit'
 
 /** PATCH /api/agency/clients/[clientId] - ロゴURLなどを更新 */
 export async function PATCH(
@@ -44,6 +45,8 @@ export async function DELETE(
   await prisma.agencyClient.delete({
     where: { agencyId_clientId: { agencyId: agency.id, clientId: params.clientId } },
   })
+
+  logAudit(_req, agency.id, { action: 'CLIENT_REMOVED', resource: 'client', resourceId: params.clientId })
 
   return NextResponse.json({ ok: true })
 }

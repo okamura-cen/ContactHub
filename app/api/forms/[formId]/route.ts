@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 /** GET /api/forms/:formId - フォーム詳細を取得 */
 export async function GET(
@@ -116,6 +117,8 @@ export async function PUT(
       })
     })
 
+    logAudit(req, user.id, { action: 'FORM_UPDATED', resource: 'form', resourceId: formId, detail: { status, title } })
+
     return NextResponse.json(form)
   } catch (error) {
     console.error('PUT /api/forms/[formId] error:', error)
@@ -151,6 +154,8 @@ export async function DELETE(
       prisma.response.deleteMany({ where: { formId } }),
       prisma.form.delete({ where: { id: formId } }),
     ])
+
+    logAudit(_req, user.id, { action: 'FORM_DELETED', resource: 'form', resourceId: formId, detail: { title: form.title } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

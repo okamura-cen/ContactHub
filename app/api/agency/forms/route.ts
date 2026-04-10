@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAgency, agencyHasClient } from '@/lib/access'
+import { logAudit } from '@/lib/audit'
 
 /** GET /api/agency/forms?clientId=xxx - 代理店のフォーム一覧（クライアント絞り込み対応） */
 export async function GET(req: NextRequest) {
@@ -80,6 +81,8 @@ export async function POST(req: NextRequest) {
     },
     include: { steps: { include: { fields: true } } },
   })
+
+  logAudit(req, agency.id, { action: 'FORM_CREATED', resource: 'form', resourceId: form.id, detail: { title, clientId: clientId || null } })
 
   return NextResponse.json(form, { status: 201 })
 }

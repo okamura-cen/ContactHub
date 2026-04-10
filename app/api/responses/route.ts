@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 /** GET /api/responses - 全フォームの送信データを横断取得 */
 export async function GET(req: NextRequest) {
@@ -43,6 +44,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 200,
     })
+
+    logAudit(req, user.id, { action: 'RESPONSE_LIST_VIEWED', resource: 'form', resourceId: formId || 'all' })
 
     return NextResponse.json({ responses, forms, formMap })
   } catch (error) {

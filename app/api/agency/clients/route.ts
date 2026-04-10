@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireAgency } from '@/lib/access'
+import { logAudit } from '@/lib/audit'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -94,6 +95,8 @@ export async function POST(req: NextRequest) {
         </div>
       `,
     })
+
+    logAudit(req, agency.id, { action: 'CLIENT_CREATED', resource: 'client', resourceId: client.id, detail: { email, name: name || null } })
 
     return NextResponse.json({ client }, { status: 201 })
   } catch (error: unknown) {

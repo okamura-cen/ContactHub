@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAgency, agencyHasClient } from '@/lib/access'
+import { logAudit } from '@/lib/audit'
 
 /** PATCH /api/agency/forms/[formId] - クライアント割り当て変更・タイトル更新など */
 export async function PATCH(
@@ -36,6 +37,8 @@ export async function PATCH(
     },
   })
 
+  logAudit(req, agency.id, { action: 'FORM_CLIENT_ASSIGNED', resource: 'form', resourceId: params.formId, detail: { clientId: clientId ?? null } })
+
   return NextResponse.json(updated)
 }
 
@@ -56,6 +59,8 @@ export async function DELETE(
     prisma.response.deleteMany({ where: { formId: params.formId } }),
     prisma.form.delete({ where: { id: params.formId } }),
   ])
+
+  logAudit(_req, agency.id, { action: 'FORM_DELETED', resource: 'form', resourceId: params.formId, detail: { title: form.title } })
 
   return NextResponse.json({ ok: true })
 }
