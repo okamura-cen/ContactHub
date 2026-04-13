@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <a href="/admin/users" className="text-sm text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))]">ユーザー管理</a>
             <a href="/admin/agencies" className="text-sm text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))]">代理店管理</a>
             <a href="/admin/audit" className="text-sm text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))]">監査ログ</a>
+            <a href="/admin/help" className="text-sm text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))]">ヘルプ管理</a>
           </nav>
           <a href="/" className="ml-auto text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">← 通常画面へ</a>
         </header>

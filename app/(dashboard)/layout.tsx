@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { ToastProvider } from '@/components/ui/toast'
-import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck, Users } from 'lucide-react'
+import { LayoutDashboard, FileText, Inbox, BarChart2, Settings, ShieldCheck, Users, HelpCircle } from 'lucide-react'
 
 const navItems = [
   { href: '/',          label: 'ダッシュボード',   icon: LayoutDashboard, clientHidden: false, agencyOnly: false },
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/responses', label: '送信データ',       icon: Inbox,           clientHidden: false, agencyOnly: false },
   { href: '/analytics', label: '分析',             icon: BarChart2,       clientHidden: false, agencyOnly: false },
   { href: '/settings',  label: '設定',             icon: Settings,        clientHidden: true,  agencyOnly: false },
+  { href: '/help',      label: 'ヘルプ',           icon: HelpCircle,      clientHidden: false, agencyOnly: false },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -185,6 +185,20 @@ enum FormEventType {
   SUBMIT
 }
 
+model HelpArticle {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  category  String
+  audience  String   @default("common")
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([audience, published])
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String
