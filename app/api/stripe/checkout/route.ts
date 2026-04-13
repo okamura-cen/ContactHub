@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     formId,
     formTitle: form.title,
     agencyEmail: agency.email,
-    successUrl: `${appUrl}/agency/forms?license=success&formId=${formId}`,
-    cancelUrl:  `${appUrl}/agency/forms?license=cancel`,
+    successUrl: `${appUrl}/forms?license=success&formId=${formId}`,
+    cancelUrl:  `${appUrl}/forms?license=cancel`,
   })
 
   return NextResponse.json({ url: session.url })
