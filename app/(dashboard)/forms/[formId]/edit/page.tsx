@@ -94,6 +94,7 @@ function FormBuilderContent() {
             id: string; type: string; label: string; placeholder?: string;
             helpText?: string; required: boolean; options?: string[];
             efoSettings?: { realtimeValidation: boolean; autoFormat: boolean; autoComplete: boolean }
+            logic?: { action: 'show' | 'hide'; operator: 'AND' | 'OR'; conditions: { fieldId: string; operator: string; value?: string }[] }
           }> }) => ({
             id: s.id,
             title: s.title,
@@ -107,6 +108,7 @@ function FormBuilderContent() {
                 required: f.required,
                 options: f.options || undefined,
                 efoSettings: f.efoSettings || undefined,
+                logic: f.logic || undefined,
               })
             ),
           })

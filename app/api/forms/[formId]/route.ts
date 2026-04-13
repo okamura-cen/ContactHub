@@ -99,6 +99,7 @@ export async function PUT(
                   required: (f.required as boolean) || false,
                   options: f.options || null,
                   efoSettings: f.efoSettings || null,
+                  logic: f.logic || null,
                 })),
               },
             },

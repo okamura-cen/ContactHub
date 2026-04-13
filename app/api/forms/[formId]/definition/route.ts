@@ -39,6 +39,7 @@ export async function GET(
           required: f.required,
           options: f.options,
           efoSettings: f.efoSettings,
+          logic: f.logic,
         })),
       })),
     }
