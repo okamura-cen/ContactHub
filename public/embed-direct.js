@@ -447,9 +447,6 @@
     var def = state.definition;
     var totalSteps = def.steps.length;
 
-    // タイトル
-    container.appendChild(h('h2', { className: 'efo-title' }, def.title));
-
     // 進捗バー（複数ステップの場合）
     if (totalSteps > 1) {
       var pct = ((state.currentStep + 1) / (totalSteps + 1)) * 100;

@@ -118,9 +118,6 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
           className="max-w-xl mx-auto bg-[hsl(var(--background))] rounded-lg shadow-sm border border-[hsl(var(--border))] p-6 md:p-8"
           style={primaryColor ? { '--primary': hexToHslValues(primaryColor) } as React.CSSProperties : undefined}
         >
-          {/* LP無効時のみフォームタイトルを表示（LP有効時は上の見出しで代替） */}
-          {!lp && <h1 className="text-xl font-bold mb-6 text-center">{title}</h1>}
-          {lp && !lp.lpHeading && <h1 className="text-xl font-bold mb-6 text-center">{title}</h1>}
           <StepForm formId={formId} steps={steps} settings={settings} isPreview={isPreview} />
         </div>
       </div>
