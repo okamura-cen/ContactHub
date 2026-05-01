@@ -71,4 +71,6 @@ export interface FormSettings {
   lpFooterCompany?: string
   lpFooterText?: string
   lpFooterLinks?: { label: string; url: string }[]
+  lpTextColor?: string
+  lpFooterBgColor?: string
 }

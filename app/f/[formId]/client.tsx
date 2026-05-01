@@ -33,6 +33,8 @@ interface LpSettings {
   lpHeading?: string
   lpDescription?: string
   lpBgColor?: string
+  lpTextColor?: string
+  lpFooterBgColor?: string
   lpFooterCompany?: string
   lpFooterText?: string
   lpFooterLinks?: { label: string; url: string }[]
@@ -64,10 +66,14 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
   const fontStyle = fontFamily ? `.efo-form { font-family: ${fontFamily}; }` : ''
   const injectedStyle = [styleVars, fontStyle, customCss].filter(Boolean).join('\n')
 
-  const bgStyle = lp?.lpBgColor ? { backgroundColor: lp.lpBgColor } : undefined
+  const pageStyle: React.CSSProperties = {
+    ...(lp?.lpBgColor && { backgroundColor: lp.lpBgColor }),
+    ...(lp?.lpTextColor && { color: lp.lpTextColor }),
+    ...(fontFamily && { fontFamily }),
+  }
 
   return (
-    <div className="efo-form min-h-screen bg-[hsl(var(--secondary))]" style={{ ...bgStyle, fontFamily: fontFamily || undefined }}>
+    <div className="efo-form min-h-screen bg-[hsl(var(--secondary))]" style={pageStyle}>
       {injectedStyle && <style dangerouslySetInnerHTML={{ __html: injectedStyle }} />}
       {recaptchaEnabled && recaptchaSiteKey && !isPreview && (
         // eslint-disable-next-line @next/next/no-sync-scripts
@@ -104,7 +110,7 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
         {lp && (lp.lpHeading || lp.lpDescription) && (
           <div className="max-w-xl mx-auto mb-6 text-center">
             {lp.lpHeading && <h1 className="text-2xl font-bold mb-2">{lp.lpHeading}</h1>}
-            {lp.lpDescription && <p className="text-sm text-gray-600 whitespace-pre-wrap">{lp.lpDescription}</p>}
+            {lp.lpDescription && <p className="text-sm whitespace-pre-wrap" style={{ opacity: 0.7 }}>{lp.lpDescription}</p>}
           </div>
         )}
 
@@ -121,15 +127,15 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
 
       {/* LP: フッター */}
       {lp && (lp.lpFooterCompany || lp.lpFooterText || (lp.lpFooterLinks && lp.lpFooterLinks.length > 0)) && (
-        <footer className="mt-12 py-8 px-4 border-t border-gray-200">
-          <div className="max-w-xl mx-auto text-center text-sm text-gray-500 space-y-2">
-            {lp.lpFooterCompany && <p className="font-medium text-gray-700">{lp.lpFooterCompany}</p>}
+        <footer className="mt-12 py-8 px-4" style={{ backgroundColor: lp.lpFooterBgColor || undefined }}>
+          <div className="max-w-xl mx-auto text-center text-sm space-y-2" style={{ opacity: 0.8 }}>
+            {lp.lpFooterCompany && <p className="font-medium" style={{ opacity: 1 }}>{lp.lpFooterCompany}</p>}
             {lp.lpFooterText && <p className="whitespace-pre-wrap text-xs">{lp.lpFooterText}</p>}
             {lp.lpFooterLinks && lp.lpFooterLinks.length > 0 && (
               <div className="flex justify-center gap-4 pt-2">
                 {lp.lpFooterLinks.map((link, i) => (
                   <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-gray-400 hover:text-gray-600 underline">
+                    className="text-xs underline hover:opacity-70">
                     {link.label}
                   </a>
                 ))}

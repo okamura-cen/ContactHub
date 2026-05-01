@@ -1,12 +1,59 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FormSettings } from '@/types/builder'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Upload } from 'lucide-react'
+
+/** 画像アップロード付き URL 入力コンポーネント */
+function ImageUrlInput({ value, onChange, label, placeholder }: {
+  value: string
+  onChange: (url: string) => void
+  label: string
+  placeholder?: string
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      if (res.ok) {
+        const { url } = await res.json()
+        onChange(url)
+      }
+    } catch { /* ignore */ }
+    setUploading(false)
+  }
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-sm">{label}</Label>
+      <div className="flex gap-2">
+        <Input value={value} onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || 'https://...'} className="flex-1" />
+        <Button type="button" size="sm" variant="outline" disabled={uploading}
+          onClick={() => fileRef.current?.click()}>
+          <Upload size={14} className="mr-1" />
+          {uploading ? '...' : '画像'}
+        </Button>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = '' }} />
+      </div>
+      {value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="preview" className="mt-1 h-12 object-contain rounded border" />
+      )}
+    </div>
+  )
+}
 
 const FONT_OPTIONS = [
   { value: '', label: 'デフォルト（システムフォント）' },
@@ -202,17 +249,13 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
         {(local.lpEnabled ?? false) && (<>
           <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
             <p className="text-sm font-medium">ヘッダー</p>
-            <div className="space-y-1">
-              <Label className="text-sm">ロゴ画像 URL</Label>
-              <Input value={local.lpLogoUrl || ''} onChange={(e) => setLocal({ ...local, lpLogoUrl: e.target.value })}
-                placeholder="https://example.com/logo.png" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-sm">ヘッダー画像 URL</Label>
-              <Input value={local.lpHeroImageUrl || ''} onChange={(e) => setLocal({ ...local, lpHeroImageUrl: e.target.value })}
-                placeholder="https://example.com/hero.jpg" />
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">フォーム上部に表示される画像（横幅いっぱいに表示）</p>
-            </div>
+            <ImageUrlInput label="ロゴ画像" value={local.lpLogoUrl || ''}
+              onChange={(url) => setLocal({ ...local, lpLogoUrl: url })}
+              placeholder="https://example.com/logo.png" />
+            <ImageUrlInput label="ヘッダー画像" value={local.lpHeroImageUrl || ''}
+              onChange={(url) => setLocal({ ...local, lpHeroImageUrl: url })}
+              placeholder="https://example.com/hero.jpg" />
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">フォーム上部に表示される画像（横幅いっぱいに表示）</p>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
@@ -240,6 +283,28 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
               {local.lpBgColor && (
                 <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
                   onClick={() => setLocal({ ...local, lpBgColor: undefined })}>リセット</button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-24 shrink-0">文字色</Label>
+              <input type="color" value={local.lpTextColor || '#1a1a1a'}
+                onChange={(e) => setLocal({ ...local, lpTextColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]" />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.lpTextColor || '#1a1a1a'}</span>
+              {local.lpTextColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, lpTextColor: undefined })}>リセット</button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-24 shrink-0">フッター背景</Label>
+              <input type="color" value={local.lpFooterBgColor || '#f1f5f9'}
+                onChange={(e) => setLocal({ ...local, lpFooterBgColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]" />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.lpFooterBgColor || '#f1f5f9'}</span>
+              {local.lpFooterBgColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, lpFooterBgColor: undefined })}>リセット</button>
               )}
             </div>
           </div>

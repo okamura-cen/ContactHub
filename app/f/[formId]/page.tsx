@@ -76,6 +76,8 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         lpFooterCompany: (settings?.lpFooterCompany as string) || undefined,
         lpFooterText: (settings?.lpFooterText as string) || undefined,
         lpFooterLinks: (settings?.lpFooterLinks as { label: string; url: string }[]) || undefined,
+        lpTextColor: (settings?.lpTextColor as string) || undefined,
+        lpFooterBgColor: (settings?.lpFooterBgColor as string) || undefined,
       }}
     />
   )

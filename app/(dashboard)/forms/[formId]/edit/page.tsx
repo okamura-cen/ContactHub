@@ -101,6 +101,8 @@ function FormBuilderContent() {
           lpFooterCompany: s.lpFooterCompany as string || undefined,
           lpFooterText: s.lpFooterText as string || undefined,
           lpFooterLinks: s.lpFooterLinks as { label: string; url: string }[] || undefined,
+          lpTextColor: s.lpTextColor as string || undefined,
+          lpFooterBgColor: s.lpFooterBgColor as string || undefined,
         })
 
         const builderSteps: BuilderStep[] = (form.steps || []).map(
