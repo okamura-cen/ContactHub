@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 
@@ -45,7 +44,7 @@ export default function HelpPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">ヘルプ</h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
@@ -54,7 +53,7 @@ export default function HelpPage() {
       </div>
 
       {/* 検索 */}
-      <div className="relative mb-6">
+      <div className="relative mb-6 max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
         <Input
           value={search}
@@ -65,47 +64,49 @@ export default function HelpPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center text-[hsl(var(--muted-foreground))]">
-            {search ? '該当するヘルプ記事が見つかりません' : 'ヘルプ記事がまだありません'}
-          </CardContent>
-        </Card>
+        <div className="py-16 text-center text-[hsl(var(--muted-foreground))]">
+          {search ? '該当するヘルプ記事が見つかりません' : 'ヘルプ記事がまだありません'}
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {grouped.map((group) => (
             <div key={group.category}>
-              <h2 className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide mb-2">
+              <h2 className="text-xs font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-3 px-1">
                 {group.category}
               </h2>
-              <Card>
-                <CardContent className="p-0">
-                  {group.articles.map((article, i) => {
-                    const isExpanded = expandedId === article.id
-                    return (
-                      <div key={article.id} className={i > 0 ? 'border-t border-[hsl(var(--border))]' : ''}>
-                        <button
-                          className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[hsl(var(--accent))] transition-colors"
-                          onClick={() => setExpandedId(isExpanded ? null : article.id)}
-                        >
-                          {isExpanded ? (
-                            <ChevronDown size={16} className="shrink-0 text-[hsl(var(--muted-foreground))]" />
-                          ) : (
-                            <ChevronRight size={16} className="shrink-0 text-[hsl(var(--muted-foreground))]" />
-                          )}
-                          <span className="font-medium text-sm">{article.title}</span>
-                        </button>
-                        {isExpanded && (
-                          <div className="px-4 pb-4 pl-11">
-                            <div className="text-sm text-[hsl(var(--foreground))] whitespace-pre-wrap leading-relaxed bg-[hsl(var(--secondary))] rounded-lg p-4">
-                              {article.content}
-                            </div>
-                          </div>
+              <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden bg-[hsl(var(--card))]">
+                {group.articles.map((article, i) => {
+                  const isExpanded = expandedId === article.id
+                  return (
+                    <div key={article.id} className={i > 0 ? 'border-t border-[hsl(var(--border))]' : ''}>
+                      <button
+                        className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors ${
+                          isExpanded
+                            ? 'bg-[hsl(var(--primary)/0.05)] border-l-2 border-l-[hsl(var(--primary))]'
+                            : 'hover:text-[hsl(var(--primary))] border-l-2 border-l-transparent'
+                        }`}
+                        onClick={() => setExpandedId(isExpanded ? null : article.id)}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown size={14} className="shrink-0 text-[hsl(var(--primary))]" />
+                        ) : (
+                          <ChevronRight size={14} className="shrink-0 text-[hsl(var(--muted-foreground))]" />
                         )}
-                      </div>
-                    )
-                  })}
-                </CardContent>
-              </Card>
+                        <span className={`text-sm ${isExpanded ? 'font-semibold text-[hsl(var(--primary))]' : 'font-medium'}`}>
+                          {article.title}
+                        </span>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-5 pb-4 pl-12 border-l-2 border-l-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.02)]">
+                          <div className="text-sm text-[hsl(var(--foreground))] whitespace-pre-wrap leading-relaxed pt-1">
+                            {article.content}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           ))}
         </div>
