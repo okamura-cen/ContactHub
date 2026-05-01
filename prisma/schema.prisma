@@ -15,6 +15,7 @@ model User {
   name           String?
   role           UserRole       @default(CLIENT)
   plan           Plan           @default(STARTER)
+  logoUrl        String?
   forms          Form[]         @relation("AgencyForms")
   clientForms    Form[]         @relation("ClientForms")
   agencyClients  AgencyClient[] @relation("AgencyToClient")

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { User, Mail, CreditCard, KeyRound } from 'lucide-react'
+import { User, Mail, CreditCard, KeyRound, Upload, ImageIcon, X } from 'lucide-react'
 
 const PLAN_LABELS: Record<string, string> = {
   STARTER: 'スターター',
@@ -20,6 +20,7 @@ interface Profile {
   plan: string
   createdAt: string
   role: string
+  logoUrl?: string | null
 }
 
 // ---------- AGENCY settings ----------
@@ -27,7 +28,10 @@ interface Profile {
 function AgencySettings({ profile }: { profile: Profile }) {
   const { toast } = useToast()
   const [name, setName] = useState(profile.name || '')
+  const [logoUrl, setLogoUrl] = useState(profile.logoUrl || '')
   const [saving, setSaving] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const handleSave = async () => {
     if (!name.trim()) return
@@ -48,6 +52,46 @@ function AgencySettings({ profile }: { profile: Profile }) {
       toast({ title: '更新に失敗しました', variant: 'destructive' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const uploadRes = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      if (!uploadRes.ok) {
+        toast({ title: 'アップロードに失敗しました', variant: 'destructive' })
+        return
+      }
+      const { url } = await uploadRes.json()
+      // サーバーに保存
+      const saveRes = await fetch('/api/agency/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logoUrl: url }),
+      })
+      if (saveRes.ok) {
+        setLogoUrl(url)
+        toast({ title: 'ロゴを更新しました', variant: 'success' })
+      }
+    } catch {
+      toast({ title: 'エラーが発生しました', variant: 'destructive' })
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const handleLogoRemove = async () => {
+    const res = await fetch('/api/agency/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logoUrl: null }),
+    })
+    if (res.ok) {
+      setLogoUrl('')
+      toast({ title: 'ロゴを削除しました', variant: 'success' })
     }
   }
 
@@ -83,6 +127,47 @@ function AgencySettings({ profile }: { profile: Profile }) {
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ロゴ設定 */}
+      <Card className="mb-5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ImageIcon size={16} />
+            ロゴ設定
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            クライアントの管理画面に表示されるロゴを設定できます。未設定の場合は ContactHub のロゴが表示されます。
+          </p>
+          {logoUrl ? (
+            <div className="flex items-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt="ロゴ" className="h-10 object-contain border rounded px-2 py-1 bg-white" />
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingLogo}>
+                  <Upload size={14} className="mr-1" />変更
+                </Button>
+                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={handleLogoRemove}>
+                  <X size={14} className="mr-1" />削除
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-32 border-2 border-dashed border-[hsl(var(--border))] rounded flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                未設定
+              </div>
+              <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingLogo}>
+                <Upload size={14} className="mr-1" />
+                {uploadingLogo ? 'アップロード中...' : 'ロゴをアップロード'}
+              </Button>
+            </div>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = '' }} />
         </CardContent>
       </Card>
 

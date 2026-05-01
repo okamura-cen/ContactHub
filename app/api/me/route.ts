@@ -9,7 +9,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { clerkId },
-    select: { id: true, email: true, name: true, role: true, plan: true },
+    select: { id: true, email: true, name: true, role: true, plan: true, logoUrl: true },
   })
 
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -20,14 +20,15 @@ export async function GET() {
     const rel = await prisma.agencyClient.findFirst({
       where: { clientId: user.id },
       include: {
-        agency: { select: { id: true, name: true, email: true } },
+        agency: { select: { id: true, name: true, email: true, logoUrl: true } },
       },
     })
     if (rel) {
       agencyInfo = {
         name: rel.agency.name || rel.agency.email,
         email: rel.agency.email,
-        logoUrl: rel.logoUrl,
+        // AgencyClient 個別のロゴがあればそちら優先、なければ代理店のロゴ
+        logoUrl: rel.logoUrl || rel.agency.logoUrl,
       }
     }
   }
