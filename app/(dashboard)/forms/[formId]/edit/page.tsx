@@ -81,12 +81,26 @@ function FormBuilderContent() {
         setTitle(form.title)
         setFormStatus(form.status || 'DRAFT')
         setLicenseStatus(form.licenseStatus || 'PENDING')
+        const s = form.settings as Record<string, unknown> || {}
         setSettings({
-          successMessage: (form.settings as Record<string, unknown>)?.successMessage as string || '送信が完了しました。',
-          redirectUrl: (form.settings as Record<string, unknown>)?.redirectUrl as string || undefined,
-          notifyEmails: (form.settings as Record<string, unknown>)?.notifyEmails as string[] || [],
-          autoReply: (form.settings as Record<string, unknown>)?.autoReply as boolean || false,
-          autoReplyMessage: (form.settings as Record<string, unknown>)?.autoReplyMessage as string || undefined,
+          successMessage: s.successMessage as string || '送信が完了しました。',
+          redirectUrl: s.redirectUrl as string || undefined,
+          notifyEmails: s.notifyEmails as string[] || [],
+          autoReply: s.autoReply as boolean || false,
+          autoReplyMessage: s.autoReplyMessage as string || undefined,
+          primaryColor: s.primaryColor as string || undefined,
+          fontFamily: s.fontFamily as string || undefined,
+          customCss: s.customCss as string || undefined,
+          recaptchaEnabled: s.recaptchaEnabled as boolean || false,
+          lpEnabled: s.lpEnabled as boolean || false,
+          lpLogoUrl: s.lpLogoUrl as string || undefined,
+          lpHeroImageUrl: s.lpHeroImageUrl as string || undefined,
+          lpHeading: s.lpHeading as string || undefined,
+          lpDescription: s.lpDescription as string || undefined,
+          lpBgColor: s.lpBgColor as string || undefined,
+          lpFooterCompany: s.lpFooterCompany as string || undefined,
+          lpFooterText: s.lpFooterText as string || undefined,
+          lpFooterLinks: s.lpFooterLinks as { label: string; url: string }[] || undefined,
         })
 
         const builderSteps: BuilderStep[] = (form.steps || []).map(

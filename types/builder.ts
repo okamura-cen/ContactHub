@@ -61,4 +61,14 @@ export interface FormSettings {
   fontFamily?: string
   customCss?: string
   recaptchaEnabled?: boolean
+  // ランディングページ設定
+  lpEnabled?: boolean
+  lpLogoUrl?: string
+  lpHeroImageUrl?: string
+  lpHeading?: string
+  lpDescription?: string
+  lpBgColor?: string
+  lpFooterCompany?: string
+  lpFooterText?: string
+  lpFooterLinks?: { label: string; url: string }[]
 }

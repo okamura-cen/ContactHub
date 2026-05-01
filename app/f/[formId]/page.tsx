@@ -67,6 +67,15 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         fontFamily: (settings?.fontFamily as string) || undefined,
         customCss: (settings?.customCss as string) || undefined,
         recaptchaEnabled: (settings?.recaptchaEnabled as boolean) || false,
+        lpEnabled: (settings?.lpEnabled as boolean) || false,
+        lpLogoUrl: (settings?.lpLogoUrl as string) || undefined,
+        lpHeroImageUrl: (settings?.lpHeroImageUrl as string) || undefined,
+        lpHeading: (settings?.lpHeading as string) || undefined,
+        lpDescription: (settings?.lpDescription as string) || undefined,
+        lpBgColor: (settings?.lpBgColor as string) || undefined,
+        lpFooterCompany: (settings?.lpFooterCompany as string) || undefined,
+        lpFooterText: (settings?.lpFooterText as string) || undefined,
+        lpFooterLinks: (settings?.lpFooterLinks as { label: string; url: string }[]) || undefined,
       }}
     />
   )
