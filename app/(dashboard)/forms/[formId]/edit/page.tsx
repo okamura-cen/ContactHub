@@ -351,6 +351,15 @@ function FormBuilderContent() {
             プレビュー
           </Button>
           {!isClient && (
+            <Button variant="outline" size="sm" onClick={() => {
+              const url = `${window.location.origin}/f/${formId}`
+              navigator.clipboard.writeText(url)
+              toast({ title: 'ページURLをコピーしました', variant: 'success' })
+            }}>
+              ページURL
+            </Button>
+          )}
+          {!isClient && (
             <Button variant="outline" size="sm" onClick={() => setShowEmbed(true)}>
               埋め込みコード
             </Button>
