@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <img
                   src={agencyInfo.logoUrl}
                   alt="logo"
-                  className="block w-full max-h-12 object-contain"
+                  className="block w-full max-h-20 object-contain"
                 />
               </Link>
             ) : (
