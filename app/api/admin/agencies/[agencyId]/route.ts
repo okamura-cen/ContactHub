@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: { agencyId: s
 
   const agency = await prisma.user.findUnique({
     where: { id: params.agencyId, role: 'AGENCY' },
-    select: { id: true, email: true, name: true, plan: true, createdAt: true },
+    select: { id: true, email: true, name: true, createdAt: true },
   })
   if (!agency) return NextResponse.json({ error: 'Agency not found' }, { status: 404 })
 

@@ -3,20 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Building2, Users, FileText, ShieldCheck, ChevronRight } from 'lucide-react'
-
-const PLAN_LABELS: Record<string, string> = {
-  STARTER: 'スターター',
-  PRO: 'プロ',
-  AGENCY: '代理店',
-}
 
 interface AgencyRow {
   id: string
   email: string
   name: string | null
-  plan: string
   createdAt: string
   clientCount: number
   formCount: number
@@ -101,7 +93,6 @@ export default function AdminAgenciesPage() {
               <thead>
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]">
                   <th className="text-left p-3 font-medium">代理店名 / メール</th>
-                  <th className="text-left p-3 font-medium">プラン</th>
                   <th className="text-left p-3 font-medium">クライアント</th>
                   <th className="text-left p-3 font-medium">フォーム</th>
                   <th className="text-left p-3 font-medium">有効ライセンス</th>
@@ -119,9 +110,6 @@ export default function AdminAgenciesPage() {
                     <td className="p-3">
                       <p className="font-medium">{a.name || '(名前なし)'}</p>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">{a.email}</p>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant="secondary">{PLAN_LABELS[a.plan] ?? a.plan}</Badge>
                     </td>
                     <td className="p-3">
                       <span className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))]">

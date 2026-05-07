@@ -5,19 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { User, Mail, CreditCard, KeyRound, Upload, ImageIcon, X } from 'lucide-react'
-
-const PLAN_LABELS: Record<string, string> = {
-  STARTER: 'スターター',
-  PRO: 'プロ',
-  AGENCY: '代理店',
-}
+import { User, Mail, KeyRound, Upload, ImageIcon, X } from 'lucide-react'
 
 interface Profile {
   id: string
   email: string
   name: string | null
-  plan: string
   createdAt: string
   role: string
   logoUrl?: string | null
@@ -195,29 +188,6 @@ function AgencySettings({ profile }: { profile: Profile }) {
         </CardContent>
       </Card>
 
-      {/* プラン */}
-      <Card className="mb-5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard size={16} />
-            プラン
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{PLAN_LABELS[profile.plan] ?? profile.plan}</p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))] mt-0.5">
-                現在のご契約プランです
-              </p>
-            </div>
-            <span className="text-xs px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-medium">
-              {PLAN_LABELS[profile.plan] ?? profile.plan}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* パスワード */}
       <Card>
         <CardHeader className="pb-3">
@@ -274,29 +244,6 @@ function ClientSettings({ profile }: { profile: Profile }) {
             <p className="text-sm text-[hsl(var(--muted-foreground))] bg-[hsl(var(--secondary))] rounded-md px-3 py-2.5">
               {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ja-JP') : '—'}
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* プラン */}
-      <Card className="mb-5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard size={16} />
-            プラン
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{PLAN_LABELS[profile.plan] ?? profile.plan}</p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))] mt-0.5">
-                現在のご契約プランです
-              </p>
-            </div>
-            <span className="text-xs px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-medium">
-              {PLAN_LABELS[profile.plan] ?? profile.plan}
-            </span>
           </div>
         </CardContent>
       </Card>

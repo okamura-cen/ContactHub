@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
         email,
         name: name || null,
         role: 'CLIENT',
-        plan: 'STARTER',
       },
     })
 

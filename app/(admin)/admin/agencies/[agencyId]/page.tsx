@@ -7,12 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Users, FileText, ArrowLeft, Globe, Clock } from 'lucide-react'
 
-const PLAN_LABELS: Record<string, string> = {
-  STARTER: 'スターター',
-  PRO: 'プロ',
-  AGENCY: '代理店',
-}
-
 const LICENSE_CONFIG: Record<string, { label: string; className: string }> = {
   ACTIVE:   { label: '有効', className: 'bg-green-100 text-green-700' },
   PENDING:  { label: '未購入', className: 'bg-yellow-100 text-yellow-700' },
@@ -31,7 +25,6 @@ interface AgencyDetail {
     id: string
     email: string
     name: string | null
-    plan: string
     createdAt: string
   }
   clients: Array<{
@@ -103,7 +96,6 @@ export default function AdminAgencyDetailPage() {
             <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{agency.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">{PLAN_LABELS[agency.plan] ?? agency.plan}</Badge>
             <span className="text-xs text-[hsl(var(--muted-foreground))]">
               登録: {new Date(agency.createdAt).toLocaleDateString('ja-JP')}
             </span>

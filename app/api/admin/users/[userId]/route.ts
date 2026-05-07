@@ -2,21 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/admin'
-import { UserRole, Plan } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 
-/** PATCH /api/admin/users/[userId] - ロール・プラン更新 */
+/** PATCH /api/admin/users/[userId] - ロール更新 */
 export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
   const admin = await requireSuperAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { role, plan } = body
+  const { role } = body
 
   const user = await prisma.user.update({
     where: { id: params.userId },
     data: {
       ...(role ? { role: role as UserRole } : {}),
-      ...(plan ? { plan: plan as Plan } : {}),
     },
   })
 

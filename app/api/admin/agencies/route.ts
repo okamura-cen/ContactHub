@@ -39,7 +39,6 @@ export async function GET() {
     id: a.id,
     email: a.email,
     name: a.name,
-    plan: a.plan,
     createdAt: a.createdAt,
     clientCount: a._count.agencyClients,
     formCount: a._count.forms,

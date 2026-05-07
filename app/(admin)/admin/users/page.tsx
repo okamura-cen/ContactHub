@@ -8,10 +8,8 @@ import { useToast } from '@/components/ui/toast'
 import { UserPlus, Trash2, Pencil } from 'lucide-react'
 
 const ROLE_LABELS = { SUPER_ADMIN: 'スーパーアドミン', AGENCY: '代理店', CLIENT: 'クライアント' } as const
-const PLAN_LABELS = { STARTER: 'スターター', PRO: 'プロ', AGENCY: '代理店' } as const
 
 type Role = keyof typeof ROLE_LABELS
-type Plan = keyof typeof PLAN_LABELS
 
 interface User {
   id: string
@@ -19,12 +17,11 @@ interface User {
   email: string
   name: string | null
   role: Role
-  plan: Plan
   createdAt: string
   _count: { forms: number }
 }
 
-const emptyForm = { name: '', email: '', password: '', role: 'CLIENT' as Role, plan: 'STARTER' as Plan }
+const emptyForm = { name: '', email: '', password: '', role: 'CLIENT' as Role }
 
 export default function AdminUsersPage() {
   const { toast } = useToast()
@@ -33,7 +30,7 @@ export default function AdminUsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<User | null>(null)
   const [form, setForm] = useState(emptyForm)
-  const [editForm, setEditForm] = useState({ role: 'CLIENT' as Role, plan: 'STARTER' as Plan })
+  const [editForm, setEditForm] = useState({ role: 'CLIENT' as Role })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -138,16 +135,6 @@ export default function AdminUsersPage() {
                   {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">プラン</label>
-                <select
-                  value={form.plan}
-                  onChange={(e) => setForm({ ...form, plan: e.target.value as Plan })}
-                  className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
-                >
-                  {Object.entries(PLAN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
             </div>
             <div className="flex gap-2 pt-1">
               <Button onClick={handleCreate} disabled={saving}>{saving ? '作成中...' : '作成する'}</Button>
@@ -170,7 +157,6 @@ export default function AdminUsersPage() {
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]">
                   <th className="text-left p-3 font-medium">名前 / メール</th>
                   <th className="text-left p-3 font-medium">ロール</th>
-                  <th className="text-left p-3 font-medium">プラン</th>
                   <th className="text-left p-3 font-medium">フォーム数</th>
                   <th className="text-left p-3 font-medium">作成日</th>
                   <th className="p-3"></th>
@@ -192,7 +178,6 @@ export default function AdminUsersPage() {
                         {ROLE_LABELS[u.role]}
                       </span>
                     </td>
-                    <td className="p-3 text-[hsl(var(--muted-foreground))]">{PLAN_LABELS[u.plan]}</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">{u._count.forms}件</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(u.createdAt).toLocaleDateString('ja-JP')}
@@ -201,7 +186,7 @@ export default function AdminUsersPage() {
                       <div className="flex gap-1 justify-end">
                         <Button
                           size="sm" variant="ghost"
-                          onClick={() => { setEditTarget(u); setEditForm({ role: u.role, plan: u.plan }) }}
+                          onClick={() => { setEditTarget(u); setEditForm({ role: u.role }) }}
                         >
                           <Pencil size={14} />
                         </Button>
@@ -237,16 +222,6 @@ export default function AdminUsersPage() {
                   className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
                 >
                   {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">プラン</label>
-                <select
-                  value={editForm.plan}
-                  onChange={(e) => setEditForm({ ...editForm, plan: e.target.value as Plan })}
-                  className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
-                >
-                  {Object.entries(PLAN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
             </div>

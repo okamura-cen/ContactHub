@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/admin'
-import { UserRole, Plan } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 
 /** GET /api/admin/users - 全ユーザー一覧 */
 export async function GET() {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { name, email, password, role, plan } = body
+  const { name, email, password, role } = body
 
   if (!email || !password) {
     return NextResponse.json({ error: 'メールアドレスとパスワードは必須です' }, { status: 400 })
@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
         email,
         name: name || null,
         role: (role as UserRole) || 'CLIENT',
-        plan: (plan as Plan) || 'STARTER',
       },
     })
 

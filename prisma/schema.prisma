@@ -14,7 +14,6 @@ model User {
   email          String
   name           String?
   role           UserRole       @default(CLIENT)
-  plan           Plan           @default(STARTER)
   logoUrl        String?
   forms          Form[]         @relation("AgencyForms")
   clientForms    Form[]         @relation("ClientForms")
@@ -63,12 +62,6 @@ enum UserRole {
   SUPER_ADMIN
   AGENCY
   CLIENT
-}
-
-enum Plan {
-  STARTER
-  PRO
-  AGENCY
 }
 
 model Form {
