@@ -106,8 +106,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
           {isClient && agencyInfo && (
             <div className="px-4 py-3 border-t border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))]">
-              <p className="font-medium text-[hsl(var(--foreground))]">担当</p>
-              <p className="truncate mt-0.5">{agencyInfo.name}</p>
+              <p className="font-medium text-[hsl(var(--foreground))] mb-1">担当代理店</p>
+              <p className="truncate font-medium text-[hsl(var(--foreground))]">{agencyInfo.name}</p>
+              <a
+                href={`mailto:${agencyInfo.email}`}
+                className="truncate block mt-0.5 hover:text-[hsl(var(--foreground))] transition-colors"
+              >
+                {agencyInfo.email}
+              </a>
             </div>
           )}
           <div className="p-4 border-t border-[hsl(var(--border))]">
