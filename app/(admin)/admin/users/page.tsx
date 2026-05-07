@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<User | null>(null)
   const [form, setForm] = useState(emptyForm)
-  const [editForm, setEditForm] = useState({ role: 'CLIENT' as Role })
+  const [editForm, setEditForm] = useState({ name: '', role: 'CLIENT' as Role })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -186,7 +186,7 @@ export default function AdminUsersPage() {
                       <div className="flex gap-1 justify-end">
                         <Button
                           size="sm" variant="ghost"
-                          onClick={() => { setEditTarget(u); setEditForm({ role: u.role }) }}
+                          onClick={() => { setEditTarget(u); setEditForm({ name: u.name ?? '', role: u.role }) }}
                         >
                           <Pencil size={14} />
                         </Button>
@@ -214,6 +214,14 @@ export default function AdminUsersPage() {
             <h2 className="text-base font-bold mb-4">ユーザー編集</h2>
             <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">{editTarget.email}</p>
             <div className="space-y-3">
+              <div>
+                <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">名前</label>
+                <Input
+                  placeholder="山田 太郎"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </div>
               <div>
                 <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">ロール</label>
                 <select

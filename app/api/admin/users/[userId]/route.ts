@@ -4,18 +4,19 @@ import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/admin'
 import { UserRole } from '@prisma/client'
 
-/** PATCH /api/admin/users/[userId] - ロール更新 */
+/** PATCH /api/admin/users/[userId] - 名前・ロール更新 */
 export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
   const admin = await requireSuperAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { role } = body
+  const { role, name } = body as { role?: UserRole; name?: string }
 
   const user = await prisma.user.update({
     where: { id: params.userId },
     data: {
       ...(role ? { role: role as UserRole } : {}),
+      ...(name !== undefined ? { name: name.trim() ? name.trim() : null } : {}),
     },
   })
 
