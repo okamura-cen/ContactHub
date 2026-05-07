@@ -57,9 +57,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside className="hidden md:flex w-56 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
           <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
             {isClient && agencyInfo?.logoUrl ? (
-              <Link href="/">
+              <Link href="/" className="block w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={agencyInfo.logoUrl} alt="logo" className="h-8 object-contain" />
+                <img
+                  src={agencyInfo.logoUrl}
+                  alt="logo"
+                  className="block w-full max-h-12 object-contain"
+                />
               </Link>
             ) : (
               <Link href="/">
