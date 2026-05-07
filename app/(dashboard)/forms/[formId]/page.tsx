@@ -19,6 +19,7 @@ interface FormDetail {
   title: string
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
   updatedAt: string
+  settings: { lpEnabled?: boolean } | null
   _count: { responses: number }
 }
 
@@ -88,28 +89,30 @@ export default function ClientFormDetailPage() {
         </p>
       </div>
 
-      {/* 公開URL */}
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">公開URL</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-2">
-            <code className="flex-1 text-sm bg-[hsl(var(--secondary))] rounded-md px-3 py-2.5 truncate font-mono">
-              {publicUrl}
-            </code>
-            <Button size="sm" variant="outline" onClick={handleCopy} className="shrink-0">
-              {copied
-                ? <><CheckCircle size={14} className="mr-1 text-green-600" />コピー済み</>
-                : <><Copy size={14} className="mr-1" />コピー</>
-              }
-            </Button>
-          </div>
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            このURLをウェブサイトやメールに掲載すると、フォームに直接アクセスできます。
-          </p>
-        </CardContent>
-      </Card>
+      {/* 公開URL（LPが有効な場合のみ表示） */}
+      {form.settings?.lpEnabled && (
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">公開URL</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm bg-[hsl(var(--secondary))] rounded-md px-3 py-2.5 truncate font-mono">
+                {publicUrl}
+              </code>
+              <Button size="sm" variant="outline" onClick={handleCopy} className="shrink-0">
+                {copied
+                  ? <><CheckCircle size={14} className="mr-1 text-green-600" />コピー済み</>
+                  : <><Copy size={14} className="mr-1" />コピー</>
+                }
+              </Button>
+            </div>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              このURLをウェブサイトやメールに掲載すると、フォームに直接アクセスできます。
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 操作 */}
       <Card className="mb-6">
