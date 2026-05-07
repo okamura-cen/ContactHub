@@ -25,9 +25,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isAgency, setIsAgency] = useState(false)
   const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
   const [meLoaded, setMeLoaded] = useState(false)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
+      setUserName(u.name || null)
+      setUserEmail(u.email || null)
       if (u.role === 'SUPER_ADMIN') {
         setIsSuperAdmin(true)
         setIsAgency(true) // SUPER_ADMINは自分を代理店として扱う
@@ -116,8 +120,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </a>
             </div>
           )}
-          <div className="p-4 border-t border-[hsl(var(--border))]">
+          <div className="px-3 py-3 border-t border-[hsl(var(--border))] flex items-center gap-2.5 min-w-0">
             <UserButton signInUrl="/sign-in" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate leading-tight">
+                {userName || userEmail || ''}
+              </p>
+              {userName && userEmail && (
+                <p className="text-xs text-[hsl(var(--muted-foreground))] truncate leading-tight mt-0.5">
+                  {userEmail}
+                </p>
+              )}
+            </div>
           </div>
         </aside>
 
