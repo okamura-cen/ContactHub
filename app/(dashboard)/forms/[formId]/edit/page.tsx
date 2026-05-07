@@ -60,10 +60,13 @@ function FormBuilderContent() {
   // ユーザーロールの確認
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
-      if (u.role === 'CLIENT') setIsClient(true)
+      if (u.role === 'CLIENT') {
+        router.replace(`/forms/${formId}`)
+        return
+      }
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
     }).catch(() => {})
-  }, [])
+  }, [formId, router])
 
   // SUPER_ADMIN は購入不要（常にライセンス有効として扱う）
   const effectiveLicenseActive = isSuperAdmin || licenseStatus === 'ACTIVE'

@@ -324,7 +324,7 @@ function ClientFormCard({
           <span>更新: {new Date(form.updatedAt).toLocaleDateString('ja-JP')}</span>
         </div>
         <div className="flex gap-2.5" onClick={(e) => e.stopPropagation()}>
-          <Button onClick={onEdit} className="flex-1">編集する</Button>
+          <Button onClick={onEdit} className="flex-1">詳細を確認</Button>
         </div>
       </CardContent>
     </Card>
@@ -360,7 +360,7 @@ function ClientFormsPage() {
         <div className="grid gap-5 lg:grid-cols-2">
           {forms.map((form) => (
             <ClientFormCard key={form.id} form={form} statusInfo={statusLabels[form.status]}
-              onEdit={() => router.push(`/forms/${form.id}/edit`)}
+              onEdit={() => router.push(`/forms/${form.id}`)}
               onPreview={() => window.open(`/f/${form.id}?preview=true`, '_blank')}
               onResponses={() => router.push(`/forms/${form.id}/responses`)}
               onAnalytics={() => router.push(`/forms/${form.id}/analytics`)}
