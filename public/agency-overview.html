@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ContactHub 代理店向けご案内</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --fg-muted: #555;
+    --line: #e5e5e5;
+    --accent: #0a5eff;
+    --bg-soft: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+    color: var(--fg);
+    line-height: 1.7;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 32px 96px;
+  }
+  header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .lead {
+    font-size: 15px;
+    color: var(--fg-muted);
+    margin: 0;
+  }
+  section {
+    margin-top: 56px;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 20px;
+    padding-left: 12px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.4;
+  }
+  p { margin: 0 0 12px; font-size: 15px; }
+  .muted { color: var(--fg-muted); font-size: 14px; }
+
+  /* 取引フロー */
+  .flow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    counter-reset: step;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .step-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin: 4px 0 4px;
+  }
+  .step-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin: 0;
+  }
+
+  /* 機能リスト */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .feature {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .feature-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+  .feature-desc {
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* 料金 */
+  .price-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 24px 28px;
+    background: var(--bg-soft);
+  }
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .price-label {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin: 0;
+  }
+  .price-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .price-value small {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    margin-left: 4px;
+  }
+  .price-note {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+
+  /* メリット */
+  .merits {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .merit {
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14px;
+  }
+  .merit:last-child { border-bottom: none; }
+  .merit b {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .merit span { color: var(--fg-muted); }
+
+  /* お問い合わせ */
+  .contact {
+    margin-top: 56px;
+    padding: 32px 28px;
+    background: var(--bg-soft);
+    border-radius: 10px;
+  }
+  .contact-head {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .contact-head h2 {
+    border: none;
+    padding: 0;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .contact-head p { margin: 0; color: var(--fg-muted); font-size: 14px; }
+
+  /* ContactHub 埋め込みフォームをページデザインに合わせて調整 */
+  .efo-form-container {
+    max-width: 560px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+  }
+  .efo-label {
+    font-size: 14px;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .efo-input,
+  .efo-form-container input,
+  .efo-form-container textarea,
+  .efo-form-container select {
+    border-radius: 6px;
+    border-color: var(--line);
+    font-family: inherit;
+  }
+  .efo-input:focus,
+  .efo-form-container input:focus,
+  .efo-form-container textarea:focus,
+  .efo-form-container select:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+  .efo-btn--next,
+  .efo-form-container button[type="submit"] {
+    background: var(--accent);
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  .efo-btn--next:hover,
+  .efo-form-container button[type="submit"]:hover {
+    background: #0848cc;
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 40px 20px 64px; }
+    h1 { font-size: 22px; }
+    .features { grid-template-columns: 1fr; }
+    .price-value { font-size: 24px; }
+  }
+
+  @media print {
+    .wrap { padding: 24px; }
+    .step, .feature, .price-card, .contact { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <p class="eyebrow">FOR PARTNERS</p>
+      <h1>ContactHub 代理店向けご案内</h1>
+      <p class="lead">フォーム＆ランディングページを、自社サービスとしてクライアントへ提供できます。</p>
+    </header>
+
+    <section>
+      <h2>サービス概要</h2>
+      <p>ContactHub は、問い合わせフォームと専用ランディングページをノーコードで作成・運用できるクラウドサービスです。代理店様は OEM 形式で、貴社サービスとして自由にクライアントへ販売いただけます。</p>
+    </section>
+
+    <section>
+      <h2>取引の流れ</h2>
+      <div class="flow">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <p class="step-title">代理店アカウント発行</p>
+            <p class="step-desc">CEN にて代理店様専用アカウントを作成いたします。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <p class="step-title">フォーム作成</p>
+            <p class="step-desc">クライアント案件ごとに、管理画面からフォーム／ランディングページを作成します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <p class="step-title">フォーム購入</p>
+            <p class="step-desc">作成したフォーム単位で利用ライセンスをご購入いただきます（年額制）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <p class="step-title">公開・運用</p>
+            <p class="step-desc">公開 URL を発行し、クライアントへ納品。回答データもそのまま管理画面で確認できます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>主な機能</h2>
+      <div class="features">
+        <div class="feature">
+          <p class="feature-title">フォームビルダー</p>
+          <p class="feature-desc">入力項目をドラッグ＆ドロップで自由に構築。</p>
+        </div>
+        <div class="feature">
+          <p class="feature-title">ランディングページ</p>
+          <p class="feature-desc">フォームに紐づく LP をワンセットで提供可能。</p>
+        </div>
+        <div class="feature">
+          <p class="feature-title">回答管理</p>
+          <p class="feature-desc">送信されたデータを管理画面で一覧・エクスポート。</p>
+        </div>
+        <div class="feature">
+          <p class="feature-title">代理店ブランディング</p>
+          <p class="feature-desc">クライアント画面に貴社ロゴ・社名を表示。</p>
+        </div>
+        <div class="feature">
+          <p class="feature-title">クライアント招待</p>
+          <p class="feature-desc">クライアントに専用画面を共有し、回答確認まで委任可能。</p>
+        </div>
+        <div class="feature">
+          <p class="feature-title">独自ドメイン公開</p>
+          <p class="feature-desc">公開 URL でフォームを即時運用開始。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>料金（仕入れ価格）</h2>
+      <div class="price-card">
+        <div class="price-row">
+          <p class="price-label">フォーム 1 件あたり</p>
+          <p class="price-value">10,000<small>円 / 年（税別）</small></p>
+        </div>
+        <p class="price-note">
+          クライアントへの販売価格は代理店様にて自由に設定いただけます。<br>
+          本仕入れ価格はクライアントには非公開ですので、サービス設計に応じた価格戦略が可能です。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>代理店メリット</h2>
+      <div class="merits">
+        <div class="merit">
+          <b>初期費用・月額固定費なし</b>
+          <span>必要なフォーム件数分のみのご請求。在庫リスクなしで導入できます。</span>
+        </div>
+        <div class="merit">
+          <b>販売価格は自由設定</b>
+          <span>仕入れと販売の差額がそのまま代理店様の利益になります。</span>
+        </div>
+        <div class="merit">
+          <b>開発・保守は CEN 側で対応</b>
+          <span>機能追加・サーバー運用・セキュリティ対応はすべて当社側で実施します。</span>
+        </div>
+        <div class="merit">
+          <b>ブランディング対応</b>
+          <span>クライアント向け画面に貴社のロゴ・名称を表示できます。</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>サポート体制</h2>
+      <p class="muted">導入時のセットアップ・運用に関するご質問は、メールにて随時対応いたします。クライアント案件のお見積もりや特殊要件についてもお気軽にご相談ください。</p>
+    </section>
+
+    <div class="contact">
+      <div class="contact-head">
+        <h2>お問い合わせ</h2>
+        <p>導入のご相談・お見積もりは下記フォームよりご連絡ください</p>
+      </div>
+
+      <!-- ContactHub フォーム埋め込み -->
+      <div id="efo-form-cmov1zven00016wwh27nr55qg"></div>
+      <script src="https://contact-hub.app/embed-direct.js"
+        data-form-id="cmov1zven00016wwh27nr55qg">
+      </script>
+    </div>
+
+    <footer>
+      © CEN Inc. ContactHub Partner Program
+    </footer>
+
+  </div>
+</body>
+</html>
