@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isClient, setIsClient] = useState(false)
   const [isAgency, setIsAgency] = useState(false)
   const [agencyInfo, setAgencyInfo] = useState<{ name: string; email: string; logoUrl: string | null } | null>(null)
+  const [meLoaded, setMeLoaded] = useState(false)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => {
@@ -36,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setIsClient(true)
         if (u.agencyInfo) setAgencyInfo(u.agencyInfo)
       }
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setMeLoaded(true))
   }, [])
 
   const isActive = (href: string) => {
@@ -55,8 +56,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen">
         {/* サイドバー */}
         <aside className="hidden md:flex w-56 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
-          <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
-            {isClient && agencyInfo?.logoUrl ? (
+          <div className="px-4 py-4 border-b border-[hsl(var(--border))] min-h-[72px] flex items-center">
+            {!meLoaded ? (
+              // ロゴ判定中はプレースホルダー（高さ確保のみ）でフラッシュ防止
+              <div className="w-full h-10" />
+            ) : isClient && agencyInfo?.logoUrl ? (
               <Link href="/" className="block w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -66,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 />
               </Link>
             ) : (
-              <Link href="/">
+              <Link href="/" className="block w-full">
                 <Image src="/contacthub_logo_yoko.svg" alt="ContactHub" width={180} height={40} style={{ width: '100%', height: 'auto' }} priority />
               </Link>
             )}
