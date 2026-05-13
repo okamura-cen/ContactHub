@@ -200,6 +200,9 @@
       case 'name':
         wrapper.appendChild(renderNameField(field));
         break;
+      case 'file':
+        wrapper.appendChild(renderFileField(field));
+        break;
     }
 
     // ヘルプテキスト
@@ -381,6 +384,145 @@
     return group;
   }
 
+  // ファイル添付フィールド
+  // 本体側 FileField.tsx と同等の UX（クリック選択 + ドラッグ&ドロップ）
+  // /api/forms/:formId/upload に FormData で POST し、{ url, name, size, type } を state に保存
+  // initial: { uploading?: boolean, error?: string } 再レンダー時の状態引き継ぎ用
+  function renderFileField(field, initial) {
+    initial = initial || {};
+    var MAX_SIZE = 10 * 1024 * 1024; // 10MB（API側と同一）
+    var ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+
+    var group = h('div', { className: 'efo-file-group' });
+    var current = state.values[field.id] || null;
+    var uploading = !!initial.uploading;
+    var localError = initial.error || '';
+
+    // 共通エラー表示エリア（renderField で wrapper 末尾に追加されている）に反映
+    // setTimeout で DOM 追加後に実行
+    setTimeout(function () {
+      var errEl = document.getElementById('efo-error-' + field.id);
+      if (errEl) {
+        errEl.textContent = localError;
+        errEl.style.display = localError ? 'block' : 'none';
+      }
+    }, 0);
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+      return (b / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function rerender(opts) {
+      var next = renderFileField(field, opts || {});
+      if (group.parentNode) group.parentNode.replaceChild(next, group);
+    }
+
+    function upload(file) {
+      if (!file) return;
+      if (file.size > MAX_SIZE) {
+        rerender({ error: 'ファイルサイズが大きすぎます（最大10MB）' });
+        return;
+      }
+      rerender({ uploading: true });
+
+      var fd = new FormData();
+      fd.append('file', file);
+
+      fetch(baseUrl + '/api/forms/' + formId + '/upload', {
+        method: 'POST',
+        body: fd,
+      })
+        .then(function (r) {
+          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        })
+        .then(function (res) {
+          if (!res.ok) {
+            rerender({ error: (res.data && res.data.error) || 'アップロードに失敗しました' });
+            return;
+          }
+          state.values[field.id] = {
+            url: res.data.url,
+            name: res.data.name,
+            size: res.data.size,
+            type: res.data.type,
+          };
+          clearError(field.id);
+          rerender();
+        })
+        .catch(function () {
+          rerender({ error: 'アップロードに失敗しました' });
+        });
+    }
+
+    if (current && current.url) {
+      // 選択済み表示
+      var fileRow = h('div', { className: 'efo-file-selected' });
+      var info = h('div', { className: 'efo-file-info' });
+      info.appendChild(h('p', { className: 'efo-file-name' }, current.name));
+      info.appendChild(h('p', { className: 'efo-file-size' }, formatBytes(current.size)));
+      fileRow.appendChild(info);
+      fileRow.appendChild(h('button', {
+        type: 'button',
+        className: 'efo-file-remove',
+        onClick: function () {
+          state.values[field.id] = null;
+          rerender();
+        },
+      }, '削除'));
+      group.appendChild(fileRow);
+    } else {
+      // ドロップゾーン
+      var fileInput = h('input', {
+        type: 'file',
+        id: 'efo-' + field.id,
+        accept: ACCEPT,
+        style: { display: 'none' },
+        onChange: function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (f) upload(f);
+        },
+      });
+
+      var dropZone = h('div', {
+        className: 'efo-file-drop' + (uploading ? ' efo-file-drop--uploading' : ''),
+        onClick: function () {
+          if (!uploading) fileInput.click();
+        },
+        onDragover: function (e) {
+          e.preventDefault();
+          dropZone.classList.add('efo-file-drop--active');
+        },
+        onDragleave: function (e) {
+          e.preventDefault();
+          dropZone.classList.remove('efo-file-drop--active');
+        },
+        onDrop: function (e) {
+          e.preventDefault();
+          dropZone.classList.remove('efo-file-drop--active');
+          if (uploading) return;
+          var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f) upload(f);
+        },
+      });
+
+      if (uploading) {
+        dropZone.appendChild(h('div', { className: 'efo-file-spinner' }));
+        dropZone.appendChild(h('p', { className: 'efo-file-hint' }, 'アップロード中...'));
+      } else {
+        dropZone.appendChild(h('p', { className: 'efo-file-main' }, 'ここにドラッグ＆ドロップ'));
+        dropZone.appendChild(h('p', { className: 'efo-file-sub' }, 'またはクリックしてファイルを選択（最大10MB）'));
+      }
+
+      group.appendChild(fileInput);
+      group.appendChild(dropZone);
+      group.appendChild(h('p', { className: 'efo-file-formats' }, '対応形式: 画像、PDF、Word、Excel、テキスト'));
+    }
+
+    return group;
+  }
+
   // バリデーション
   function validateField(field) {
     var val = state.values[field.id];
@@ -391,6 +533,8 @@
         if (!val || !val.zipcode) return setError(field.id, '郵便番号を入力してください');
       } else if (field.type === 'agree') {
         if (!val) return setError(field.id, '同意が必要です');
+      } else if (field.type === 'file') {
+        if (!val || !val.url) return setError(field.id, field.label + 'を添付してください');
       } else if (!val || (typeof val === 'string' && !val.trim())) {
         return setError(field.id, field.label + 'を入力してください');
       }
@@ -568,6 +712,24 @@
       '.efo-complete-icon { font-size: 2.5rem; margin-bottom: 1rem; }',
       '.efo-complete-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }',
       '.efo-complete-message { color: #666; }',
+      /* ファイル添付フィールド */
+      '.efo-file-group { display: flex; flex-direction: column; }',
+      '.efo-file-drop { border: 2px dashed #d1d5db; border-radius: 0.5rem; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all 0.15s; background: #fafafa; }',
+      '.efo-file-drop:hover { border-color: #3b82f6; background: #f3f6ff; }',
+      '.efo-file-drop--active { border-color: #3b82f6; background: #eff4ff; }',
+      '.efo-file-drop--uploading { opacity: 0.6; cursor: not-allowed; }',
+      '.efo-file-main { font-size: 0.875rem; color: #444; margin: 0 0 0.25rem; }',
+      '.efo-file-sub { font-size: 0.75rem; color: #666; margin: 0; }',
+      '.efo-file-formats { font-size: 0.75rem; color: #888; margin: 0.5rem 0 0; }',
+      '.efo-file-spinner { width: 1.5rem; height: 1.5rem; border: 2px solid #d1d5db; border-top-color: #3b82f6; border-radius: 50%; animation: efo-spin 0.8s linear infinite; margin: 0 auto 0.5rem; }',
+      '.efo-file-hint { font-size: 0.875rem; color: #666; margin: 0; }',
+      '@keyframes efo-spin { to { transform: rotate(360deg); } }',
+      '.efo-file-selected { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb; }',
+      '.efo-file-info { flex: 1; min-width: 0; }',
+      '.efo-file-name { font-size: 0.875rem; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+      '.efo-file-size { font-size: 0.75rem; color: #666; margin: 0; }',
+      '.efo-file-remove { background: none; border: none; color: #e53e3e; font-size: 0.75rem; cursor: pointer; padding: 0.25rem 0.5rem; flex-shrink: 0; }',
+      '.efo-file-remove:hover { text-decoration: underline; }',
     ].join('\n');
     document.head.appendChild(style);
   }
