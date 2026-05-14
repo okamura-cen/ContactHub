@@ -105,11 +105,19 @@ export async function POST(
         const recipientEmail = emailField ? (data as Record<string, string>)[emailField.id] : null
 
         if (recipientEmail) {
+          // フォーム設定で上書き可能、未設定時は環境変数→デフォルトの順でフォールバック
+          const fromEmail = (settings.autoReplyFromEmail as string) || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+          const fromName = (settings.autoReplyFromName as string) || ''
+          const from = fromName ? `${fromName} <${fromEmail}>` : fromEmail
+          const replyTo = (settings.autoReplyReplyTo as string) || undefined
+          const subject = (settings.autoReplySubject as string) || `【${form.title}】お問い合わせありがとうございます`
+
           try {
             await resend.emails.send({
-              from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+              from,
               to: recipientEmail,
-              subject: `【${form.title}】お問い合わせありがとうございます`,
+              subject,
+              ...(replyTo && { replyTo }),
               html: (settings.autoReplyMessage as string) ||
                 '<p>お問い合わせいただきありがとうございます。</p><p>内容を確認の上、担当者よりご連絡いたします。</p>',
             })

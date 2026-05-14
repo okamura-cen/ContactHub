@@ -91,6 +91,10 @@ function FormBuilderContent() {
           notifyEmails: s.notifyEmails as string[] || [],
           autoReply: s.autoReply as boolean || false,
           autoReplyMessage: s.autoReplyMessage as string || undefined,
+          autoReplyFromEmail: s.autoReplyFromEmail as string || undefined,
+          autoReplyFromName: s.autoReplyFromName as string || undefined,
+          autoReplyReplyTo: s.autoReplyReplyTo as string || undefined,
+          autoReplySubject: s.autoReplySubject as string || undefined,
           primaryColor: s.primaryColor as string || undefined,
           fontFamily: s.fontFamily as string || undefined,
           customCss: s.customCss as string || undefined,
@@ -114,6 +118,7 @@ function FormBuilderContent() {
             helpText?: string; required: boolean; options?: string[];
             efoSettings?: { realtimeValidation: boolean; autoFormat: boolean; autoComplete: boolean }
             logic?: { action: 'show' | 'hide'; operator: 'AND' | 'OR'; conditions: { fieldId: string; operator: string; value?: string }[] }
+            linkUrl?: string | null
           }> }) => ({
             id: s.id,
             title: s.title,
@@ -128,6 +133,7 @@ function FormBuilderContent() {
                 options: f.options || undefined,
                 efoSettings: f.efoSettings || undefined,
                 logic: f.logic || undefined,
+                linkUrl: f.linkUrl || undefined,
               })
             ),
           })

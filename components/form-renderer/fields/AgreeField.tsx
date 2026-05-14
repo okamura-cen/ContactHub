@@ -9,10 +9,11 @@ interface AgreeFieldProps {
   value: boolean
   onChange: (value: boolean) => void
   onBlur: () => void
+  linkUrl?: string
 }
 
 /** 同意チェックボックスフィールド */
-export function AgreeField({ id, label, helpText, required, error, value, onChange, onBlur }: AgreeFieldProps) {
+export function AgreeField({ id, label, helpText, required, error, value, onChange, onBlur, linkUrl }: AgreeFieldProps) {
   return (
     <div className="space-y-2">
       <label
@@ -30,6 +31,21 @@ export function AgreeField({ id, label, helpText, required, error, value, onChan
         <span className="text-base">
           {label}
           {required && <span className="text-[hsl(var(--destructive))] ml-1">*</span>}
+          {linkUrl && (
+            <>
+              {' '}
+              <a
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                // ラベル全体がチェックボックスをトグルするため、リンククリックでは伝播を止める
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-[hsl(var(--primary))] underline hover:opacity-80"
+              >
+                詳細
+              </a>
+            </>
+          )}
         </span>
       </label>
       {helpText && !error && <p className="text-sm text-[hsl(var(--muted-foreground))]">{helpText}</p>}

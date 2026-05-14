@@ -122,6 +122,8 @@ model Field {
   options     Json?
   efoSettings Json?
   logic       Json?
+  // agree 型でラベル横に表示する外部リンクURL
+  linkUrl     String?
 }
 
 enum FieldType {

@@ -154,14 +154,57 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
             </Label>
           </div>
           {local.autoReply && (
-            <div className="space-y-1">
-              <Label className="text-sm">自動返信メッセージ</Label>
-              <Textarea
-                value={local.autoReplyMessage || ''}
-                onChange={(e) => setLocal({ ...local, autoReplyMessage: e.target.value })}
-                rows={4}
-                placeholder="お問い合わせいただきありがとうございます。内容を確認の上、担当者よりご連絡いたします。"
-              />
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-sm">自動返信メッセージ</Label>
+                <Textarea
+                  value={local.autoReplyMessage || ''}
+                  onChange={(e) => setLocal({ ...local, autoReplyMessage: e.target.value })}
+                  rows={4}
+                  placeholder="お問い合わせいただきありがとうございます。内容を確認の上、担当者よりご連絡いたします。"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-sm">送信元アドレス</Label>
+                  <Input
+                    type="email"
+                    value={local.autoReplyFromEmail || ''}
+                    onChange={(e) => setLocal({ ...local, autoReplyFromEmail: e.target.value })}
+                    placeholder="noreply@example.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm">送信元表示名</Label>
+                  <Input
+                    value={local.autoReplyFromName || ''}
+                    onChange={(e) => setLocal({ ...local, autoReplyFromName: e.target.value })}
+                    placeholder="株式会社サンプル"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                ※ Resendで認証済みのドメインのアドレスのみ使用可能です。未設定時はシステム共通の送信元が使われます。
+              </p>
+              <div className="space-y-1">
+                <Label className="text-sm">返信先アドレス（Reply-To）</Label>
+                <Input
+                  type="email"
+                  value={local.autoReplyReplyTo || ''}
+                  onChange={(e) => setLocal({ ...local, autoReplyReplyTo: e.target.value })}
+                  placeholder="support@example.com"
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者が返信した際の宛先（任意）</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">件名</Label>
+                <Input
+                  value={local.autoReplySubject || ''}
+                  onChange={(e) => setLocal({ ...local, autoReplySubject: e.target.value })}
+                  placeholder="【サンプル】お問い合わせありがとうございます"
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">未設定時は「【フォームタイトル】お問い合わせありがとうございます」が使われます</p>
+              </div>
             </div>
           )}
         </div>

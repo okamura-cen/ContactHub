@@ -49,6 +49,7 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
       options: (f.options as string[]) || undefined,
       efoSettings: f.efoSettings as { realtimeValidation: boolean; autoFormat: boolean; autoComplete: boolean } | undefined,
       logic: (f.logic as unknown as import('@/types/builder').FieldLogic) || undefined,
+      linkUrl: f.linkUrl || undefined,
     })),
   }))
 
