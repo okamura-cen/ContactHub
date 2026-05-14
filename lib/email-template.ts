@@ -50,8 +50,11 @@ export function formatFieldValue(field: Pick<FieldLike, 'type'>, value: unknown)
   }
 }
 
-/** {{全回答}} 用のHTML表を生成 */
-function renderAnswersTable(fields: FieldLike[], data: Record<string, unknown>): string {
+/** 回答内容を全件HTML表として描画
+ *  - 自動返信メール本文の {{全回答}} 展開
+ *  - 管理者通知メールの本体
+ * の両方で使用 */
+export function renderAnswersTable(fields: FieldLike[], data: Record<string, unknown>): string {
   const rows = fields
     .filter((f) => !['HEADING', 'DIVIDER', 'PARAGRAPH'].includes(f.type))
     .map((f) => {
