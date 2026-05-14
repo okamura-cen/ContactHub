@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { FormSettings } from '@/types/builder'
+import { FormSettings, BuilderField } from '@/types/builder'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,10 +68,14 @@ interface FormSettingsDialogProps {
   onOpenChange: (open: boolean) => void
   settings: FormSettings
   onSave: (settings: FormSettings) => void
+  /** 自動返信メールのプレースホルダー候補表示用（レイアウト系を除く全フィールド） */
+  fields?: BuilderField[]
 }
 
 /** フォーム設定ダイアログ */
-export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: FormSettingsDialogProps) {
+export function FormSettingsDialog({ open, onOpenChange, settings, onSave, fields = [] }: FormSettingsDialogProps) {
+  // プレースホルダーとして表示するフィールド（見出し・区切り線・段落は除く）
+  const placeholderFields = fields.filter((f) => !['heading', 'divider', 'paragraph'].includes(f.type))
   const [local, setLocal] = useState<FormSettings>(settings)
   const [tab, setTab] = useState<'general' | 'lp'>('general')
 
@@ -160,9 +164,26 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
                 <Textarea
                   value={local.autoReplyMessage || ''}
                   onChange={(e) => setLocal({ ...local, autoReplyMessage: e.target.value })}
-                  rows={4}
-                  placeholder="お問い合わせいただきありがとうございます。内容を確認の上、担当者よりご連絡いたします。"
+                  rows={6}
+                  placeholder={'{{お名前}} 様\nこのたびはお問い合わせいただきありがとうございます。\n以下の内容で承りました。\n\n{{全回答}}'}
                 />
+                <div className="text-xs text-[hsl(var(--muted-foreground))] space-y-1 pt-1">
+                  <p>本文に以下のプレースホルダーを書くと、回答内容を差し込めます:</p>
+                  <p>
+                    <code className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">{'{{全回答}}'}</code>
+                    {' '}— すべての回答を表形式で挿入
+                  </p>
+                  {placeholderFields.length > 0 && (
+                    <p className="flex flex-wrap gap-1 items-baseline">
+                      <span>個別のフィールド:</span>
+                      {placeholderFields.map((f) => (
+                        <code key={f.id} className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">
+                          {`{{${f.label}}}`}
+                        </code>
+                      ))}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-sm">送信元表示名</Label>
