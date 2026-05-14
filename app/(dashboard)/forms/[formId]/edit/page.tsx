@@ -441,6 +441,7 @@ function FormBuilderContent() {
         onOpenChange={setShowSettings}
         settings={settings}
         onSave={setSettings}
+        fields={steps.flatMap((s) => s.fields)}
       />
     </div>
   )

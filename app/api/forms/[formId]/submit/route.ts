@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
+import { expandAutoReplyTemplate } from '@/lib/email-template'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -112,14 +113,19 @@ export async function POST(
           const replyTo = (settings.autoReplyReplyTo as string) || undefined
           const subject = (settings.autoReplySubject as string) || `【${form.title}】お問い合わせありがとうございます`
 
+          // {{ラベル}} / {{全回答}} を回答内容で展開
+          const rawTemplate = (settings.autoReplyMessage as string) ||
+            '<p>お問い合わせいただきありがとうございます。</p><p>内容を確認の上、担当者よりご連絡いたします。</p>'
+          const allFields = form.steps.flatMap((s) => s.fields)
+          const expandedHtml = expandAutoReplyTemplate(rawTemplate, allFields, data as Record<string, unknown>)
+
           try {
             await resend.emails.send({
               from,
               to: recipientEmail,
               subject,
               ...(replyTo && { replyTo }),
-              html: (settings.autoReplyMessage as string) ||
-                '<p>お問い合わせいただきありがとうございます。</p><p>内容を確認の上、担当者よりご連絡いたします。</p>',
+              html: expandedHtml,
             })
           } catch (emailError) {
             console.error('Auto-reply email failed:', emailError)
