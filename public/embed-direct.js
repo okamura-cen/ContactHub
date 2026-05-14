@@ -191,7 +191,21 @@
         });
         if (val) agreeCb.checked = true;
         agreeLabel.appendChild(agreeCb);
-        agreeLabel.appendChild(h('span', { className: 'efo-agree-text' }, field.label));
+        var agreeTextSpan = h('span', { className: 'efo-agree-text' }, field.label);
+        // linkUrl が設定されている場合はラベル横に「詳細」リンクを表示
+        if (field.linkUrl) {
+          agreeTextSpan.appendChild(document.createTextNode(' '));
+          var detailLink = h('a', {
+            className: 'efo-agree-link',
+            href: field.linkUrl,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            // ラベルクリックでチェックボックスがトグルされるので、リンククリックの伝播を止める
+            onClick: function (e) { e.stopPropagation(); },
+          }, '詳細');
+          agreeTextSpan.appendChild(detailLink);
+        }
+        agreeLabel.appendChild(agreeTextSpan);
         wrapper.appendChild(agreeLabel);
         break;
       case 'zip':
@@ -694,6 +708,8 @@
       '.efo-radio-group, .efo-checkbox-group { display: flex; flex-direction: column; gap: 0.5rem; }',
       '.efo-radio-label, .efo-checkbox-label, .efo-agree-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; min-height: 2.75rem; }',
       '.efo-radio-label:hover, .efo-checkbox-label:hover, .efo-agree-label:hover { background: #f3f4f6; }',
+      '.efo-agree-link { color: #3b82f6; text-decoration: underline; font-size: 0.875rem; margin-left: 0.25rem; }',
+      '.efo-agree-link:hover { opacity: 0.8; }',
       '.efo-name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem; }',
       '.efo-zip-group { display: flex; flex-direction: column; gap: 0.5rem; }',
       '.efo-heading { font-size: 1.125rem; font-weight: 600; padding-top: 0.5rem; }',

@@ -100,6 +100,7 @@ export async function PUT(
                   options: f.options || null,
                   efoSettings: f.efoSettings || null,
                   logic: f.logic || null,
+                  linkUrl: (f.linkUrl as string) || null,
                 })),
               },
             },

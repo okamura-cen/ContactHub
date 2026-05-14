@@ -84,6 +84,23 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
           </div>
         )}
 
+        {/* リンクURL（agree 型のみ）：設定するとラベル横に「詳細」リンクを表示 */}
+        {field.type === 'agree' && (
+          <div className="space-y-1">
+            <Label className="text-xs">リンクURL（任意）</Label>
+            <Input
+              type="url"
+              value={field.linkUrl || ''}
+              onChange={(e) => updateField({ linkUrl: e.target.value })}
+              className="text-sm h-9"
+              placeholder="https://example.com/privacy"
+            />
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+              設定するとラベル横に「詳細」リンクが表示されます
+            </p>
+          </div>
+        )}
+
         {/* ヘルプテキスト */}
         {!isLayoutField && (
           <div className="space-y-1">

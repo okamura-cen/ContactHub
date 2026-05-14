@@ -40,6 +40,7 @@ export async function GET(
           options: f.options,
           efoSettings: f.efoSettings,
           logic: f.logic,
+          linkUrl: f.linkUrl,
         })),
       })),
     }

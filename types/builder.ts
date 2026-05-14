@@ -43,6 +43,8 @@ export interface BuilderField {
   options?: string[]
   efoSettings?: EfoSettings
   logic?: FieldLogic
+  // agree 型でラベル横に表示する外部リンクURL（例: 個人情報の取り扱いページ）
+  linkUrl?: string
 }
 
 export interface BuilderStep {
@@ -57,6 +59,11 @@ export interface FormSettings {
   notifyEmails: string[]
   autoReply: boolean
   autoReplyMessage?: string
+  // 自動返信メールの送信元・件名カスタマイズ（フォーム単位で上書き、未設定時は環境変数 RESEND_FROM_EMAIL を使用）
+  autoReplyFromEmail?: string
+  autoReplyFromName?: string
+  autoReplyReplyTo?: string
+  autoReplySubject?: string
   primaryColor?: string
   fontFamily?: string
   customCss?: string

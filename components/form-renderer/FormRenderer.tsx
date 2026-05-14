@@ -170,6 +170,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
                 {...commonProps}
                 value={!!values[field.id]}
                 onChange={(v) => onChange(field.id, v)}
+                linkUrl={field.linkUrl}
               />
             )
           case 'file':
