@@ -401,26 +401,17 @@
   // ファイル添付フィールド
   // 本体側 FileField.tsx と同等の UX（クリック選択 + ドラッグ&ドロップ）
   // /api/forms/:formId/upload に FormData で POST し、{ url, name, size, type } を state に保存
-  // initial: { uploading?: boolean, error?: string } 再レンダー時の状態引き継ぎ用
-  function renderFileField(field, initial) {
-    initial = initial || {};
+  //
+  // 安定した wrapper 要素を保持して子要素だけを差し替える方式にしている。
+  // 以前は呼び出しごとに新しい group 要素を生成して replaceChild する方式だったが、
+  // upload の fetch コールバックが古いクロージャの group（既に DOM から外れた要素）を
+  // 参照してしまい、アップロード完了後に DOM 更新がスキップされて
+  // スピナーが永遠に残るバグがあったため修正。
+  function renderFileField(field) {
     var MAX_SIZE = 10 * 1024 * 1024; // 10MB（API側と同一）
     var ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
 
-    var group = h('div', { className: 'efo-file-group' });
-    var current = state.values[field.id] || null;
-    var uploading = !!initial.uploading;
-    var localError = initial.error || '';
-
-    // 共通エラー表示エリア（renderField で wrapper 末尾に追加されている）に反映
-    // setTimeout で DOM 追加後に実行
-    setTimeout(function () {
-      var errEl = document.getElementById('efo-error-' + field.id);
-      if (errEl) {
-        errEl.textContent = localError;
-        errEl.style.display = localError ? 'block' : 'none';
-      }
-    }, 0);
+    var wrapper = h('div', { className: 'efo-file-group' });
 
     function formatBytes(b) {
       if (b < 1024) return b + ' B';
@@ -428,65 +419,38 @@
       return (b / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    function rerender(opts) {
-      var next = renderFileField(field, opts || {});
-      if (group.parentNode) group.parentNode.replaceChild(next, group);
+    function setLocalError(msg) {
+      var errEl = document.getElementById('efo-error-' + field.id);
+      if (errEl) {
+        errEl.textContent = msg || '';
+        errEl.style.display = msg ? 'block' : 'none';
+      }
     }
 
-    function upload(file) {
-      if (!file) return;
-      if (file.size > MAX_SIZE) {
-        rerender({ error: 'ファイルサイズが大きすぎます（最大10MB）' });
+    function render(uploading) {
+      while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
+      var current = state.values[field.id] || null;
+
+      if (current && current.url) {
+        // 選択済み表示
+        var fileRow = h('div', { className: 'efo-file-selected' });
+        var info = h('div', { className: 'efo-file-info' });
+        info.appendChild(h('p', { className: 'efo-file-name' }, current.name));
+        info.appendChild(h('p', { className: 'efo-file-size' }, formatBytes(current.size)));
+        fileRow.appendChild(info);
+        fileRow.appendChild(h('button', {
+          type: 'button',
+          className: 'efo-file-remove',
+          onClick: function () {
+            state.values[field.id] = null;
+            setLocalError('');
+            render(false);
+          },
+        }, '削除'));
+        wrapper.appendChild(fileRow);
         return;
       }
-      rerender({ uploading: true });
 
-      var fd = new FormData();
-      fd.append('file', file);
-
-      fetch(baseUrl + '/api/forms/' + formId + '/upload', {
-        method: 'POST',
-        body: fd,
-      })
-        .then(function (r) {
-          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
-        })
-        .then(function (res) {
-          if (!res.ok) {
-            rerender({ error: (res.data && res.data.error) || 'アップロードに失敗しました' });
-            return;
-          }
-          state.values[field.id] = {
-            url: res.data.url,
-            name: res.data.name,
-            size: res.data.size,
-            type: res.data.type,
-          };
-          clearError(field.id);
-          rerender();
-        })
-        .catch(function () {
-          rerender({ error: 'アップロードに失敗しました' });
-        });
-    }
-
-    if (current && current.url) {
-      // 選択済み表示
-      var fileRow = h('div', { className: 'efo-file-selected' });
-      var info = h('div', { className: 'efo-file-info' });
-      info.appendChild(h('p', { className: 'efo-file-name' }, current.name));
-      info.appendChild(h('p', { className: 'efo-file-size' }, formatBytes(current.size)));
-      fileRow.appendChild(info);
-      fileRow.appendChild(h('button', {
-        type: 'button',
-        className: 'efo-file-remove',
-        onClick: function () {
-          state.values[field.id] = null;
-          rerender();
-        },
-      }, '削除'));
-      group.appendChild(fileRow);
-    } else {
       // ドロップゾーン
       var fileInput = h('input', {
         type: 'file',
@@ -529,12 +493,53 @@
         dropZone.appendChild(h('p', { className: 'efo-file-sub' }, 'またはクリックしてファイルを選択（最大10MB）'));
       }
 
-      group.appendChild(fileInput);
-      group.appendChild(dropZone);
-      group.appendChild(h('p', { className: 'efo-file-formats' }, '対応形式: 画像、PDF、Word、Excel、テキスト'));
+      wrapper.appendChild(fileInput);
+      wrapper.appendChild(dropZone);
+      wrapper.appendChild(h('p', { className: 'efo-file-formats' }, '対応形式: 画像、PDF、Word、Excel、テキスト'));
     }
 
-    return group;
+    function upload(file) {
+      if (!file) return;
+      if (file.size > MAX_SIZE) {
+        setLocalError('ファイルサイズが大きすぎます（最大10MB）');
+        return;
+      }
+      setLocalError('');
+      render(true);
+
+      var fd = new FormData();
+      fd.append('file', file);
+
+      fetch(baseUrl + '/api/forms/' + formId + '/upload', {
+        method: 'POST',
+        body: fd,
+      })
+        .then(function (r) {
+          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        })
+        .then(function (res) {
+          if (!res.ok) {
+            setLocalError((res.data && res.data.error) || 'アップロードに失敗しました');
+            render(false);
+            return;
+          }
+          state.values[field.id] = {
+            url: res.data.url,
+            name: res.data.name,
+            size: res.data.size,
+            type: res.data.type,
+          };
+          clearError(field.id);
+          render(false);
+        })
+        .catch(function () {
+          setLocalError('アップロードに失敗しました');
+          render(false);
+        });
+    }
+
+    render(false);
+    return wrapper;
   }
 
   // バリデーション
