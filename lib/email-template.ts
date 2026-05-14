@@ -77,11 +77,15 @@ export function expandAutoReplyTemplate(
   }
   const answersTable = renderAnswersTable(fields, data)
 
-  return template.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => {
+  const expanded = template.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => {
     const k = key.trim()
     if (k === '全回答') return answersTable
     if (labelMap.has(k)) return escapeHtml(labelMap.get(k) || '')
     // 該当ラベルがない場合は空文字
     return ''
   })
+
+  // HTMLメールでは生の改行は空白に折り畳まれるため <br> に変換
+  // （{{全回答}} で挿入される <table> 内には改行が含まれないため影響なし）
+  return expanded.replace(/\r?\n/g, '<br>')
 }
