@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
-import { expandAutoReplyTemplate } from '@/lib/email-template'
+import { expandAutoReplyTemplate, renderAnswersTable } from '@/lib/email-template'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -73,14 +73,7 @@ export async function POST(
       const notifyEmails = (settings.notifyEmails as string[]) || []
       if (notifyEmails.length > 0) {
         const allFields = form.steps.flatMap((s) => s.fields)
-        const htmlRows = allFields
-          .filter((f) => !['HEADING', 'DIVIDER'].includes(f.type))
-          .map((f) => {
-            const val = (data as Record<string, unknown>)[f.id] || '(未入力)'
-            const displayVal = typeof val === 'object' ? JSON.stringify(val) : String(val)
-            return `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${f.label}</td><td style="padding:8px;border:1px solid #ddd;">${displayVal}</td></tr>`
-          })
-          .join('')
+        const answersTable = renderAnswersTable(allFields, data as Record<string, unknown>)
 
         try {
           await resend.emails.send({
@@ -89,7 +82,7 @@ export async function POST(
             subject: `【ContactHub】${form.title} に新しい送信がありました`,
             html: `
               <h2>${form.title} - 新規送信通知</h2>
-              <table style="border-collapse:collapse;width:100%;">${htmlRows}</table>
+              ${answersTable}
               <p style="margin-top:16px;color:#666;">送信日時: ${new Date().toLocaleString('ja-JP')}</p>
             `,
           })
