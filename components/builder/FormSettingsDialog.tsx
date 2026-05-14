@@ -164,28 +164,15 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave }: For
                   placeholder="お問い合わせいただきありがとうございます。内容を確認の上、担当者よりご連絡いたします。"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-sm">送信元アドレス</Label>
-                  <Input
-                    type="email"
-                    value={local.autoReplyFromEmail || ''}
-                    onChange={(e) => setLocal({ ...local, autoReplyFromEmail: e.target.value })}
-                    placeholder="noreply@example.com"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm">送信元表示名</Label>
-                  <Input
-                    value={local.autoReplyFromName || ''}
-                    onChange={(e) => setLocal({ ...local, autoReplyFromName: e.target.value })}
-                    placeholder="株式会社サンプル"
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label className="text-sm">送信元表示名</Label>
+                <Input
+                  value={local.autoReplyFromName || ''}
+                  onChange={(e) => setLocal({ ...local, autoReplyFromName: e.target.value })}
+                  placeholder="株式会社サンプル"
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者の差出人名として表示されます（例: 株式会社サンプル）</p>
               </div>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                ※ Resendで認証済みのドメインのアドレスのみ使用可能です。未設定時はシステム共通の送信元が使われます。
-              </p>
               <div className="space-y-1">
                 <Label className="text-sm">返信先アドレス（Reply-To）</Label>
                 <Input
