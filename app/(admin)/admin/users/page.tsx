@@ -21,22 +21,31 @@ interface User {
   _count: { forms: number }
 }
 
+interface MeResponse {
+  id: string
+}
+
 const emptyForm = { name: '', email: '', password: '', role: 'CLIENT' as Role }
 
 export default function AdminUsersPage() {
   const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
+  const [meId, setMeId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<User | null>(null)
   const [form, setForm] = useState(emptyForm)
-  const [editForm, setEditForm] = useState({ name: '', role: 'CLIENT' as Role })
+  const [editForm, setEditForm] = useState({ name: '', email: '', password: '', role: 'CLIENT' as Role })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
     setLoading(true)
-    const res = await fetch('/api/admin/users')
-    if (res.ok) setUsers(await res.json())
+    const [usersRes, meRes] = await Promise.all([fetch('/api/admin/users'), fetch('/api/me')])
+    if (usersRes.ok) setUsers(await usersRes.json())
+    if (meRes.ok) {
+      const me = (await meRes.json()) as MeResponse
+      setMeId(me.id)
+    }
     setLoading(false)
   }
 
@@ -67,19 +76,45 @@ export default function AdminUsersPage() {
 
   const handleEdit = async () => {
     if (!editTarget) return
+    if (editForm.password && editForm.password.length < 8) {
+      toast({ title: 'パスワードは 8 文字以上にしてください', variant: 'destructive' })
+      return
+    }
+    // 部分更新ボディを組み立て
+    const body: Record<string, unknown> = {}
+    if (editForm.name !== (editTarget.name ?? '')) body.name = editForm.name
+    if (editForm.email !== editTarget.email) body.email = editForm.email
+    if (editForm.password) body.password = editForm.password
+    if (editForm.role !== editTarget.role && editTarget.id !== meId) body.role = editForm.role
+
+    if (Object.keys(body).length === 0) {
+      toast({ title: '変更がありません', variant: 'destructive' })
+      return
+    }
+
     setSaving(true)
     const res = await fetch(`/api/admin/users/${editTarget.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm),
+      body: JSON.stringify(body),
     })
     setSaving(false)
     if (res.ok) {
-      toast({ title: '更新しました', variant: 'success' })
+      const data = await res.json()
+      const parts: string[] = []
+      if ('name' in body) parts.push('名前')
+      if ('email' in body) parts.push('メール')
+      if ('password' in body) parts.push('パスワード（通知メール送信）')
+      if ('role' in body) parts.push('ロール')
+      toast({ title: `更新しました: ${parts.join('、')}`, variant: 'success' })
+      if (data.warning) {
+        toast({ title: data.warning, variant: 'destructive' })
+      }
       setEditTarget(null)
       load()
     } else {
-      toast({ title: 'エラーが発生しました', variant: 'destructive' })
+      const { error } = await res.json()
+      toast({ title: error || 'エラーが発生しました', variant: 'destructive' })
     }
   }
 
@@ -94,6 +129,8 @@ export default function AdminUsersPage() {
     }
   }
 
+  const isSelf = editTarget?.id === meId
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -107,7 +144,7 @@ export default function AdminUsersPage() {
         </Button>
       </div>
 
-      {/* 新規作成フォーム */}
+      {/* 新規作成フォーム（既存どおり） */}
       {showCreate && (
         <Card className="mb-6 border-[hsl(var(--primary)/0.3)]">
           <CardHeader><CardTitle className="text-base">新規ユーザー作成</CardTitle></CardHeader>
@@ -144,7 +181,7 @@ export default function AdminUsersPage() {
         </Card>
       )}
 
-      {/* ユーザー一覧 */}
+      {/* ユーザー一覧（既存どおり） */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -186,7 +223,10 @@ export default function AdminUsersPage() {
                       <div className="flex gap-1 justify-end">
                         <Button
                           size="sm" variant="ghost"
-                          onClick={() => { setEditTarget(u); setEditForm({ name: u.name ?? '', role: u.role }) }}
+                          onClick={() => {
+                            setEditTarget(u)
+                            setEditForm({ name: u.name ?? '', email: u.email, password: '', role: u.role })
+                          }}
                         >
                           <Pencil size={14} />
                         </Button>
@@ -211,8 +251,8 @@ export default function AdminUsersPage() {
       {editTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-[hsl(var(--card))] rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-base font-bold mb-4">ユーザー編集</h2>
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">{editTarget.email}</p>
+            <h2 className="text-base font-bold mb-1">ユーザー編集</h2>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">現在のメール: {editTarget.email}</p>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">名前</label>
@@ -223,14 +263,40 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
+                <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">メールアドレス</label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">新パスワード（空欄なら変更しない）</label>
+                <Input
+                  type="password"
+                  placeholder="8文字以上"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                  入力した場合、新パスワードを記載した通知メールが本人に届きます。
+                </p>
+              </div>
+              <div>
                 <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">ロール</label>
                 <select
                   value={editForm.role}
                   onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
-                  className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
+                  disabled={isSelf}
+                  className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm disabled:opacity-50"
                 >
                   {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
+                {isSelf && (
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                    ※ 自分自身のロールは変更できません（ロックアウト防止）。
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 mt-4">
