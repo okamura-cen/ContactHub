@@ -11,7 +11,9 @@ export async function GET() {
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { _count: { select: { forms: true } } },
+    // forms: 所有フォーム数 (AGENCY/SUPER_ADMIN 向け)
+    // clientForms: 担当フォーム数 (CLIENT 向け)
+    include: { _count: { select: { forms: true, clientForms: true } } },
   })
 
   return NextResponse.json(users)

@@ -18,7 +18,7 @@ interface User {
   name: string | null
   role: Role
   createdAt: string
-  _count: { forms: number }
+  _count: { forms: number; clientForms: number }
 }
 
 interface MeResponse {
@@ -224,7 +224,9 @@ export default function AdminUsersPage() {
                         {ROLE_LABELS[u.role]}
                       </span>
                     </td>
-                    <td className="p-3 text-[hsl(var(--muted-foreground))]">{u._count.forms}件</td>
+                    <td className="p-3 text-[hsl(var(--muted-foreground))]">
+                      {u.role === 'CLIENT' ? u._count.clientForms : u._count.forms}件
+                    </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(u.createdAt).toLocaleDateString('ja-JP')}
                     </td>
