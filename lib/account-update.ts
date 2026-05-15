@@ -33,21 +33,43 @@ export interface AccountUpdateResult {
   emailWarning: string | null
 }
 
-/** Clerk のユーザーにメールアドレスを追加 → primary に設定 → 旧 email を削除。
- *  Clerk v6 SDK の挙動に従う。失敗時は throw。 */
+/** Clerk のユーザーのプライマリメールを変更する（冪等）。
+ *  - 既に同じアドレスの emailAddress があれば再利用し primary に設定
+ *  - なければ新規作成
+ *  - 旧 email の削除は best-effort（失敗してもログ出力のみで throw しない。
+ *    primary の切替が成功していれば、ユーザーは新メールでログインできる）
+ *  失敗時は throw（プライマリ切替自体が失敗した場合）。 */
 async function changeClerkEmail(clerkId: string, newEmail: string): Promise<void> {
   const clerk = await clerkClient()
-  const created = await clerk.emailAddresses.createEmailAddress({
-    userId: clerkId,
-    emailAddress: newEmail,
-    primary: true,
-    verified: true,
-  })
-  // 旧 emailAddress（new 以外）を削除
   const user = await clerk.users.getUser(clerkId)
+
+  // 既存の emailAddress に同じアドレスがあれば再利用（リトライ時の duplicate を回避）
+  const existing = user.emailAddresses.find(
+    (e) => e.emailAddress.toLowerCase() === newEmail.toLowerCase(),
+  )
+  let primaryId: string
+  if (existing) {
+    // 既存を primary に昇格
+    await clerk.users.updateUser(clerkId, { primaryEmailAddressID: existing.id })
+    primaryId = existing.id
+  } else {
+    const created = await clerk.emailAddresses.createEmailAddress({
+      userId: clerkId,
+      emailAddress: newEmail,
+      primary: true,
+      verified: true,
+    })
+    primaryId = created.id
+  }
+
+  // 旧 email を best-effort で削除（失敗しても primary は新メールなので機能上問題ない）
   for (const e of user.emailAddresses) {
-    if (e.id !== created.id) {
-      await clerk.emailAddresses.deleteEmailAddress(e.id)
+    if (e.id !== primaryId) {
+      try {
+        await clerk.emailAddresses.deleteEmailAddress(e.id)
+      } catch (err) {
+        console.warn(`Failed to delete old email ${e.id}:`, err)
+      }
     }
   }
 }
