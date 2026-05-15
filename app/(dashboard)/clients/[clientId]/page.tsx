@@ -52,6 +52,9 @@ export default function ClientDetailPage() {
   const [savingLogo, setSavingLogo] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [assigning, setAssigning] = useState(false)
+  // アカウント設定
+  const [accountForm, setAccountForm] = useState({ name: '', email: '', password: '' })
+  const [savingAccount, setSavingAccount] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -66,6 +69,7 @@ export default function ClientDetailPage() {
       if (found) {
         setRelation(found)
         setLogoUrl(found.logoUrl || '')
+        setAccountForm({ name: found.client.name ?? '', email: found.client.email, password: '' })
       } else {
         router.push('/clients')
       }
@@ -123,6 +127,54 @@ export default function ClientDetailPage() {
       load()
     } else {
       toast({ title: 'エラーが発生しました', variant: 'destructive' })
+    }
+  }
+
+  const handleSaveAccount = async () => {
+    if (!relation) return
+    if (accountForm.password && accountForm.password.length < 8) {
+      toast({ title: 'パスワードは 8 文字以上にしてください', variant: 'destructive' })
+      return
+    }
+    const trimmedName = accountForm.name.trim()
+    const trimmedEmail = accountForm.email.trim()
+    if (!trimmedEmail) {
+      toast({ title: 'メールアドレスを入力してください', variant: 'destructive' })
+      return
+    }
+
+    const body: Record<string, unknown> = {}
+    if (trimmedName !== (relation.client.name ?? '')) body.name = trimmedName
+    if (trimmedEmail !== relation.client.email) body.email = trimmedEmail
+    if (accountForm.password) body.password = accountForm.password
+
+    if (Object.keys(body).length === 0) {
+      toast({ title: '変更がありません', variant: 'destructive' })
+      return
+    }
+
+    setSavingAccount(true)
+    const res = await fetch(`/api/agency/clients/${clientId}/account`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    setSavingAccount(false)
+    if (res.ok) {
+      const data = await res.json()
+      const parts: string[] = []
+      if ('name' in body) parts.push('名前')
+      if ('email' in body) parts.push('メール')
+      if ('password' in body) parts.push('パスワード（通知メール送信）')
+      toast({ title: `更新しました: ${parts.join('、')}`, variant: 'success' })
+      if (data.warning) {
+        toast({ title: data.warning, variant: 'destructive' })
+      }
+      setAccountForm({ ...accountForm, password: '' })
+      load()
+    } else {
+      const { error } = await res.json()
+      toast({ title: error || 'エラーが発生しました', variant: 'destructive' })
     }
   }
 
@@ -204,6 +256,56 @@ export default function ClientDetailPage() {
           </div>
         </div>
       )}
+
+      {/* アカウント設定 */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Pencil size={16} />
+            アカウント設定
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            クライアントの名前・メール・パスワードを変更できます。現在のメール: {client.email}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">名前</label>
+              <Input
+                placeholder="株式会社○○"
+                value={accountForm.name}
+                onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">メールアドレス</label>
+              <Input
+                type="email"
+                value={accountForm.email}
+                onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">新パスワード（空欄なら変更しない）</label>
+              <Input
+                type="password"
+                placeholder="8文字以上"
+                value={accountForm.password}
+                onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            パスワード変更時は、新パスワードを記載した通知メールがクライアントに自動送信されます。
+          </p>
+          <div>
+            <Button onClick={handleSaveAccount} disabled={savingAccount}>
+              {savingAccount ? '保存中...' : '変更を保存'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* フォーム一覧 */}
       <Card>
