@@ -1,26 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/admin'
 import { UserRole } from '@prisma/client'
+import { accountUpdateSchema, updateUserAccount } from '@/lib/account-update'
 
-/** PATCH /api/admin/users/[userId] - 名前・ロール更新 */
+const adminUpdateSchema = accountUpdateSchema.extend({
+  role: z.nativeEnum(UserRole).optional(),
+})
+
+/** PATCH /api/admin/users/[userId] - 名前・メール・パスワード・ロール更新 */
 export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
   const admin = await requireSuperAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json()
-  const { role, name } = body as { role?: UserRole; name?: string }
+  const parsed = adminUpdateSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.errors[0]?.message ?? '入力エラー' }, { status: 400 })
+  }
+  const { role, ...accountInput } = parsed.data
 
-  const user = await prisma.user.update({
-    where: { id: params.userId },
-    data: {
-      ...(role ? { role: role as UserRole } : {}),
-      ...(name !== undefined ? { name: name.trim() ? name.trim() : null } : {}),
-    },
-  })
+  const target = await prisma.user.findUnique({ where: { id: params.userId } })
+  if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  return NextResponse.json(user)
+  // 自分自身のロール変更は不可（ロックアウト防止）
+  if (role !== undefined && target.id === admin.id && role !== admin.role) {
+    return NextResponse.json({ error: '自分自身のロールは変更できません' }, { status: 400 })
+  }
+
+  try {
+    // ロールは DB のみ更新（Clerk は関与しない）
+    if (role !== undefined) {
+      await prisma.user.update({ where: { id: target.id }, data: { role } })
+    }
+
+    // name/email/password はヘルパーに委譲
+    if (Object.values(accountInput).some((v) => v !== undefined)) {
+      const result = await updateUserAccount(target, accountInput, admin, req)
+      return NextResponse.json({ user: result.user, warning: result.emailWarning ?? undefined })
+    }
+
+    const updated = await prisma.user.findUnique({ where: { id: target.id } })
+    return NextResponse.json({ user: updated })
+  } catch (error: unknown) {
+    console.error('PATCH /api/admin/users/[userId] error:', error)
+    const clerkError = error as { errors?: { message: string }[] }
+    const message = clerkError?.errors?.[0]?.message || 'ユーザーの更新に失敗しました'
+    return NextResponse.json({ error: message }, { status: 400 })
+  }
 }
 
 /** DELETE /api/admin/users/[userId] - ユーザー削除 */
@@ -46,7 +74,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
 
   // 関連データを順番に削除してからユーザーを削除
   await prisma.$transaction(async (tx) => {
-    // ユーザーが所有するフォームの送信データ・イベント・ステップ・フィールドを削除
     const ownedForms = await tx.form.findMany({
       where: { userId: params.userId },
       select: { id: true },
@@ -56,30 +83,23 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
     if (formIds.length > 0) {
       await tx.response.deleteMany({ where: { formId: { in: formIds } } })
       await tx.formEvent.deleteMany({ where: { formId: { in: formIds } } })
-      // Field は Step に cascade するが念のため
       const steps = await tx.step.findMany({ where: { formId: { in: formIds } }, select: { id: true } })
       await tx.field.deleteMany({ where: { stepId: { in: steps.map((s) => s.id) } } })
       await tx.step.deleteMany({ where: { formId: { in: formIds } } })
       await tx.form.deleteMany({ where: { id: { in: formIds } } })
     }
 
-    // クライアントとして割り当てられたフォームの clientId をクリア
     await tx.form.updateMany({
       where: { clientId: params.userId },
       data: { clientId: null },
     })
 
-    // 代理店-クライアント紐付けを削除
     await tx.agencyClient.deleteMany({
       where: { OR: [{ agencyId: params.userId }, { clientId: params.userId }] },
     })
 
-    // 招待を削除
     await tx.invitation.deleteMany({ where: { agencyId: params.userId } })
 
-    // 監査ログは残す（userId は文字列参照のみ、外部キーなし）
-
-    // ユーザー本体を削除
     await tx.user.delete({ where: { id: params.userId } })
   })
 
