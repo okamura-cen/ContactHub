@@ -80,10 +80,17 @@ export default function AdminUsersPage() {
       toast({ title: 'パスワードは 8 文字以上にしてください', variant: 'destructive' })
       return
     }
+    const trimmedName = editForm.name.trim()
+    const trimmedEmail = editForm.email.trim()
+    if (!trimmedEmail) {
+      toast({ title: 'メールアドレスを入力してください', variant: 'destructive' })
+      return
+    }
+
     // 部分更新ボディを組み立て
     const body: Record<string, unknown> = {}
-    if (editForm.name !== (editTarget.name ?? '')) body.name = editForm.name
-    if (editForm.email !== editTarget.email) body.email = editForm.email
+    if (trimmedName !== (editTarget.name ?? '')) body.name = trimmedName
+    if (trimmedEmail !== editTarget.email) body.email = trimmedEmail
     if (editForm.password) body.password = editForm.password
     if (editForm.role !== editTarget.role && editTarget.id !== meId) body.role = editForm.role
 
@@ -129,7 +136,9 @@ export default function AdminUsersPage() {
     }
   }
 
-  const isSelf = editTarget?.id === meId
+  // meId がまだロードできていない場合も安全側で自己編集扱いとし、
+  // ロール変更 UI を無効化する（サーバー側ガードと併せて defense-in-depth）。
+  const isSelf = meId === null ? true : editTarget?.id === meId
 
   return (
     <div>
