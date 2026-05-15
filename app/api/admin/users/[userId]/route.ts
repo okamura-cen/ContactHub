@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/admin'
 import { UserRole } from '@prisma/client'
 import { accountUpdateSchema, updateUserAccount } from '@/lib/account-update'
+import { logAudit } from '@/lib/audit'
 
 const adminUpdateSchema = accountUpdateSchema.extend({
   role: z.nativeEnum(UserRole).optional(),
@@ -25,24 +26,33 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   // 自分自身のロール変更は不可（ロックアウト防止）
-  if (role !== undefined && target.id === admin.id && role !== admin.role) {
+  if (role !== undefined && target.id === admin.id && role !== target.role) {
     return NextResponse.json({ error: '自分自身のロールは変更できません' }, { status: 400 })
   }
 
   try {
-    // ロールは DB のみ更新（Clerk は関与しない）
-    if (role !== undefined) {
-      await prisma.user.update({ where: { id: target.id }, data: { role } })
-    }
+    let resultUser = target
+    let warning: string | undefined
 
-    // name/email/password はヘルパーに委譲
-    if (Object.values(accountInput).some((v) => v !== undefined)) {
+    // 1. name/email/password を先に処理（Clerk 反映含む。失敗時は throw されて catch へ）
+    if (accountInput.name !== undefined || accountInput.email !== undefined || accountInput.password !== undefined) {
       const result = await updateUserAccount(target, accountInput, admin, req)
-      return NextResponse.json({ user: result.user, warning: result.emailWarning ?? undefined })
+      resultUser = result.user
+      warning = result.emailWarning ?? undefined
     }
 
-    const updated = await prisma.user.findUnique({ where: { id: target.id } })
-    return NextResponse.json({ user: updated })
+    // 2. ロール更新（DB のみ・Clerk 非関与）。同値ならスキップ
+    if (role !== undefined && role !== target.role) {
+      resultUser = await prisma.user.update({ where: { id: target.id }, data: { role } })
+      await logAudit(req, admin.id, {
+        action: 'ACCOUNT_UPDATED',
+        resource: 'user',
+        resourceId: target.id,
+        detail: { changedFields: ['role'], oldRole: target.role, newRole: role },
+      })
+    }
+
+    return NextResponse.json({ user: resultUser, warning })
   } catch (error: unknown) {
     console.error('PATCH /api/admin/users/[userId] error:', error)
     const clerkError = error as { errors?: { message: string }[] }
