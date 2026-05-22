@@ -16,6 +16,7 @@ interface ClientRelation {
     id: string
     name: string | null
     email: string
+    role: 'CLIENT' | 'CLIENT_EDITOR'
     createdAt: string
     _count: { clientForms: number }
   }
@@ -187,6 +188,7 @@ export default function ClientsPage() {
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]">
                   <th className="text-left p-3 font-medium">クライアント</th>
                   <th className="text-left p-3 font-medium">メール</th>
+                  <th className="text-left p-3 font-medium">権限</th>
                   <th className="text-left p-3 font-medium">フォーム数</th>
                   <th className="text-left p-3 font-medium">追加日</th>
                   <th className="p-3"></th>
@@ -213,6 +215,13 @@ export default function ClientsPage() {
                       </div>
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">{rel.client.email}</td>
+                    <td className="p-3">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        rel.client.role === 'CLIENT_EDITOR' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {rel.client.role === 'CLIENT_EDITOR' ? '編集者クライアント' : 'クライアント'}
+                      </span>
+                    </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">{rel.client._count.clientForms}件</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(rel.createdAt).toLocaleDateString('ja-JP')}
