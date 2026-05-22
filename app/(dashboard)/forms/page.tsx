@@ -48,11 +48,12 @@ interface ClientOption {
 }
 
 function AgencyFormCard({
-  form, clients, isSuperAdmin, onEdit, onDelete, onAssignClient, onResponses, onPreview,
+  form, clients, isSuperAdmin, canDelete, onEdit, onDelete, onAssignClient, onResponses, onPreview,
 }: {
   form: AgencyForm
   clients: ClientOption[]
   isSuperAdmin: boolean
+  canDelete: boolean
   onEdit: () => void
   onDelete: () => void
   onAssignClient: (clientId: string | null) => void
@@ -94,8 +95,12 @@ function AgencyFormCard({
                 <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { onPreview(); setMenuOpen(false) }}><Eye size={14} /> プレビュー</button>
                 <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { onResponses(); setMenuOpen(false) }}><Inbox size={14} /> 送信データ</button>
                 <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]" onClick={() => { setAssignOpen(true); setMenuOpen(false) }}><UserCheck size={14} /> クライアント割り当て</button>
-                <hr className="my-1 border-[hsl(var(--border))]" />
-                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--accent))]" onClick={() => { onDelete(); setMenuOpen(false) }}><Trash2 size={14} /> 削除</button>
+                {canDelete && (
+                  <>
+                    <hr className="my-1 border-[hsl(var(--border))]" />
+                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--accent))]" onClick={() => { onDelete(); setMenuOpen(false) }}><Trash2 size={14} /> 削除</button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -164,6 +169,7 @@ function AgencyFormsPage() {
   const [search, setSearch] = useState('')
   const [filterClient, setFilterClient] = useState('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [me, setMe] = useState<{ id: string; role: string } | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -176,9 +182,13 @@ function AgencyFormsPage() {
   useEffect(() => {
     load()
     fetch('/api/me').then((r) => r.json()).then((u) => {
+      setMe({ id: u.id, role: u.role })
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
     }).catch(() => {})
   }, [])
+
+  // 新規作成ボタンは AGENCY/SUPER_ADMIN のみ表示（CLIENT_EDITOR は API レベルでも 403、UI レベルでも非表示）
+  const canCreateForm = me?.role === 'AGENCY' || me?.role === 'SUPER_ADMIN'
 
   const handleDelete = async (form: AgencyForm) => {
     if (!confirm(`「${form.title}」を削除しますか？この操作は元に戻せません。`)) return
@@ -211,9 +221,11 @@ function AgencyFormsPage() {
           <h1 className="text-2xl font-bold">フォーム管理</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{forms.length}件のフォーム</p>
         </div>
-        <Button onClick={() => router.push('/forms/new')}>
-          <Plus size={16} className="mr-2" />新しいフォームを作成
-        </Button>
+        {canCreateForm && (
+          <Button onClick={() => router.push('/forms/new')}>
+            <Plus size={16} className="mr-2" />新しいフォームを作成
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -231,13 +243,19 @@ function AgencyFormsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-[hsl(var(--muted-foreground))]">
           {forms.length === 0 ? (
-            <><p className="mb-4">まだフォームがありません</p><Button onClick={() => router.push('/forms/new')}>最初のフォームを作成する</Button></>
+            <>
+              <p className="mb-4">まだフォームがありません</p>
+              {canCreateForm && (
+                <Button onClick={() => router.push('/forms/new')}>最初のフォームを作成する</Button>
+              )}
+            </>
           ) : '該当するフォームがありません'}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((form) => (
             <AgencyFormCard key={form.id} form={form} clients={clients} isSuperAdmin={isSuperAdmin}
+              canDelete={canCreateForm}
               onEdit={() => router.push(`/forms/${form.id}/edit?back=/forms`)}
               onDelete={() => handleDelete(form)}
               onAssignClient={(clientId) => handleAssignClient(form.id, clientId)}
