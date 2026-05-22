@@ -21,6 +21,7 @@ export async function GET() {
           id: true,
           email: true,
           name: true,
+          role: true,
           createdAt: true,
           _count: { select: { clientForms: true } },
         },
