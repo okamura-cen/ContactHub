@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (body.memo !== undefined) updateData.memo = body.memo
 
     const updated = await prisma.response.update({
-      where: { id: responseId },
+      where: { id: responseId, formId },
       data: updateData,
     })
 
@@ -56,7 +56,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     })
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
 
-    await prisma.response.delete({ where: { id: responseId } })
+    await prisma.response.delete({ where: { id: responseId, formId } })
 
     logAudit(_req, user.id, { action: 'RESPONSE_DELETED', resource: 'response', resourceId: responseId, detail: { formId } })
 
