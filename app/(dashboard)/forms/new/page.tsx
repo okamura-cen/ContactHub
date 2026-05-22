@@ -109,72 +109,25 @@ function AgencyNewFormPage() {
   )
 }
 
-// ---------- CLIENT version ----------
-
-function ClientNewFormPage() {
-  const router = useRouter()
-  const [title, setTitle] = useState('')
-  const [creating, setCreating] = useState(false)
-
-  const handleCreate = async () => {
-    if (!title.trim()) return
-    setCreating(true)
-    try {
-      const res = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
-      })
-      if (res.ok) {
-        const form = await res.json()
-        router.push(`/forms/${form.id}/edit`)
-      }
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  return (
-    <div className="max-w-md mx-auto mt-20">
-      <Card>
-        <CardHeader>
-          <CardTitle>新しいフォームを作成</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-1.5">フォームタイトル</label>
-            <Input
-              placeholder="例: お問い合わせフォーム"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              autoFocus
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}>
-              キャンセル
-            </Button>
-            <Button onClick={handleCreate} disabled={!title.trim() || creating}>
-              {creating ? '作成中...' : '作成してビルダーを開く'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 // ---------- Page entry ----------
 
 export default function NewFormPage() {
+  const router = useRouter()
   const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((u) => setRole(u.role)).catch(() => setRole('CLIENT'))
   }, [])
 
+  useEffect(() => {
+    // CLIENT / CLIENT_EDITOR は新規作成権限が無いためフォーム一覧へ戻す
+    if (role && role !== 'AGENCY' && role !== 'SUPER_ADMIN') {
+      router.replace('/forms')
+    }
+  }, [role, router])
+
   if (!role) return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--primary))]" /></div>
   if (role === 'AGENCY' || role === 'SUPER_ADMIN') return <AgencyNewFormPage />
-  return <ClientNewFormPage />
+  // リダイレクト処理中のフォールバック
+  return null
 }
