@@ -62,6 +62,7 @@ enum UserRole {
   SUPER_ADMIN
   AGENCY
   CLIENT
+  CLIENT_EDITOR
 }
 
 model Form {
