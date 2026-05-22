@@ -21,7 +21,7 @@ interface ClientRelation {
   }
 }
 
-const emptyForm = { name: '', email: '', password: '' }
+const emptyForm = { name: '', email: '', password: '', role: 'CLIENT' as 'CLIENT' | 'CLIENT_EDITOR' }
 
 export default function ClientsPage() {
   const router = useRouter()
@@ -130,6 +130,20 @@ export default function ClientsPage() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
               </div>
+            </div>
+            <div>
+              <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">権限</label>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value as 'CLIENT' | 'CLIENT_EDITOR' })}
+                className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
+              >
+                <option value="CLIENT">閲覧のみ (クライアント)</option>
+                <option value="CLIENT_EDITOR">フォーム編集可 (編集者クライアント)</option>
+              </select>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                「フォーム編集可」を選ぶと、クライアントが担当フォームの項目を編集できるようになります。
+              </p>
             </div>
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
               ※ 作成後、入力したメールアドレスにログイン案内メールが自動送信されます。
