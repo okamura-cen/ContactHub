@@ -3,6 +3,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireAgency } from '@/lib/access'
 import { logAudit } from '@/lib/audit'
+import { clientRoleSchema } from '@/lib/validations/role'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -31,17 +32,24 @@ export async function GET() {
   return NextResponse.json(relations)
 }
 
-/** POST /api/agency/clients - クライアント作成（メール+パスワード） */
+/** POST /api/agency/clients - クライアント作成（メール+パスワード+ロール） */
 export async function POST(req: NextRequest) {
   const agency = await requireAgency()
   if (!agency) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { name, email, password } = body
+  const { name, email, password, role: rawRole } = body
 
   if (!email || !password) {
     return NextResponse.json({ error: 'メールアドレスとパスワードは必須です' }, { status: 400 })
   }
+
+  // ロール検証 (CLIENT or CLIENT_EDITOR のみ、未指定なら CLIENT)
+  const roleParsed = clientRoleSchema.optional().default('CLIENT').safeParse(rawRole)
+  if (!roleParsed.success) {
+    return NextResponse.json({ error: '不正な権限指定です' }, { status: 400 })
+  }
+  const role = roleParsed.data
 
   try {
     // Clerkでクライアントアカウント作成
@@ -52,13 +60,13 @@ export async function POST(req: NextRequest) {
       firstName: name || undefined,
     })
 
-    // DBにCLIENTロールで作成
+    // DBに指定ロールで作成
     const client = await prisma.user.create({
       data: {
         clerkId: clerkUser.id,
         email,
         name: name || null,
-        role: 'CLIENT',
+        role,
       },
     })
 
@@ -95,7 +103,7 @@ export async function POST(req: NextRequest) {
       `,
     })
 
-    logAudit(req, agency.id, { action: 'CLIENT_CREATED', resource: 'client', resourceId: client.id, detail: { email, name: name || null } })
+    logAudit(req, agency.id, { action: 'CLIENT_CREATED', resource: 'client', resourceId: client.id, detail: { email, name: name || null, role } })
 
     return NextResponse.json({ client }, { status: 201 })
   } catch (error: unknown) {
