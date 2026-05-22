@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
+import { canDeleteForm, canEditForm } from '@/lib/access'
 
 /** GET /api/forms/:formId - フォーム詳細を取得 */
 export async function GET(
@@ -11,6 +12,7 @@ export async function GET(
   try {
     const { formId } = await params
 
+    // 公開フォーム取得（認証なし）と認証済みアクセスの両方を許可する従来の挙動を維持。
     const form = await prisma.form.findUnique({
       where: { id: formId },
       include: {
@@ -33,7 +35,7 @@ export async function GET(
   }
 }
 
-/** PUT /api/forms/:formId - フォームを更新 */
+/** PUT /api/forms/:formId - フォームを更新 (AGENCY/SUPER_ADMIN 所有 or CLIENT_EDITOR 担当) */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ formId: string }> }
@@ -48,17 +50,15 @@ export async function PUT(
     const body = await req.json()
     const { title, description, status, settings, steps } = body
 
-    // フォームの所有権チェック
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const existingForm = await prisma.form.findFirst({
-      where: { id: formId, userId: user.id },
-    })
-    if (!existingForm) {
-      return NextResponse.json({ error: 'Form not found' }, { status: 404 })
+    // 編集権チェック (AGENCY/SUPER_ADMIN owner または CLIENT_EDITOR 担当)
+    const edit = await canEditForm(user, formId)
+    if (!edit.allowed) {
+      return NextResponse.json({ error: '編集権限がありません' }, { status: 403 })
     }
 
     // ステップとフィールドの更新（トランザクション）
@@ -128,7 +128,7 @@ export async function PUT(
   }
 }
 
-/** DELETE /api/forms/:formId - フォームを削除 */
+/** DELETE /api/forms/:formId - フォームを削除 (AGENCY/SUPER_ADMIN owner のみ) */
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ formId: string }> }
@@ -145,11 +145,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const form = await prisma.form.findFirst({
-      where: { id: formId, userId: user.id },
+    const form = await prisma.form.findUnique({
+      where: { id: formId },
+      select: { id: true, userId: true, title: true },
     })
     if (!form) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 })
+    }
+
+    if (!canDeleteForm(user, form)) {
+      return NextResponse.json({ error: 'フォーム削除権限がありません' }, { status: 403 })
     }
 
     await prisma.$transaction([
