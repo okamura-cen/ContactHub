@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">
-                      {u.role === 'CLIENT' ? u._count.clientForms : u._count.forms}件
+                      {(u.role === 'CLIENT' || u.role === 'CLIENT_EDITOR') ? u._count.clientForms : u._count.forms}件
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(u.createdAt).toLocaleDateString('ja-JP')}

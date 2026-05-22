@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 /**
  * サインイン直後に呼ばれるルーティングハブ。
  * /api/me でロールを取得し、適切な画面へ転送する。
- *   SUPER_ADMIN → /admin/users
- *   AGENCY      → /agency
- *   CLIENT      → /
+ *   SUPER_ADMIN               → /admin/users
+ *   AGENCY                    → /
+ *   CLIENT / CLIENT_EDITOR    → /
  */
 export default function AuthRedirectPage() {
   const router = useRouter()

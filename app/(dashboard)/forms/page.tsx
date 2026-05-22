@@ -187,8 +187,10 @@ function AgencyFormsPage() {
     }).catch(() => {})
   }, [])
 
-  // 新規作成ボタンは AGENCY/SUPER_ADMIN のみ表示（CLIENT_EDITOR は API レベルでも 403、UI レベルでも非表示）
+  // 新規作成/削除ボタンは AGENCY/SUPER_ADMIN のみ表示（CLIENT_EDITOR は API レベルでも 403、UI レベルでも非表示）
+  // canCreateForm と canDeleteForm は現仕様では同じ条件だが、意図を明確化するため別変数として保持
   const canCreateForm = me?.role === 'AGENCY' || me?.role === 'SUPER_ADMIN'
+  const canDeleteForm = me?.role === 'AGENCY' || me?.role === 'SUPER_ADMIN'
 
   const handleDelete = async (form: AgencyForm) => {
     if (!confirm(`「${form.title}」を削除しますか？この操作は元に戻せません。`)) return
@@ -255,7 +257,7 @@ function AgencyFormsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((form) => (
             <AgencyFormCard key={form.id} form={form} clients={clients} isSuperAdmin={isSuperAdmin}
-              canDelete={canCreateForm}
+              canDelete={canDeleteForm}
               onEdit={() => router.push(`/forms/${form.id}/edit?back=/forms`)}
               onDelete={() => handleDelete(form)}
               onAssignClient={(clientId) => handleAssignClient(form.id, clientId)}
