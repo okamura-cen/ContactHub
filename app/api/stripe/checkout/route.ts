@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAgency } from '@/lib/access'
+import { getCurrentUser, canPurchaseLicense } from '@/lib/access'
 import { createCheckoutSession } from '@/lib/stripe'
 
 /**
@@ -8,17 +8,21 @@ import { createCheckoutSession } from '@/lib/stripe'
  * フォームライセンス購入のCheckoutセッションを作成
  */
 export async function POST(req: NextRequest) {
-  const agency = await requireAgency()
-  if (!agency) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { formId } = await req.json()
   if (!formId) return NextResponse.json({ error: 'formId is required' }, { status: 400 })
 
-  // フォームが代理店のものか確認
-  const form = await prisma.form.findFirst({
-    where: { id: formId, userId: agency.id },
+  const form = await prisma.form.findUnique({
+    where: { id: formId },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // ライセンス購入権 (AGENCY/SUPER_ADMIN ∧ owner のみ)
+  if (!canPurchaseLicense(user, form)) {
+    return NextResponse.json({ error: '権限がありません' }, { status: 403 })
+  }
 
   // すでにACTIVEなライセンスがある場合はスキップ
   if (form.licenseStatus === 'ACTIVE') {
@@ -30,7 +34,7 @@ export async function POST(req: NextRequest) {
   const session = await createCheckoutSession({
     formId,
     formTitle: form.title,
-    agencyEmail: agency.email,
+    agencyEmail: user.email,
     successUrl: `${appUrl}/forms?license=success&formId=${formId}`,
     cancelUrl:  `${appUrl}/forms?license=cancel`,
   })
