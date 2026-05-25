@@ -72,6 +72,68 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
           )}
         </div>
 
+        {/* PARAGRAPH 用の追加設定 */}
+        {field.type === 'paragraph' && (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">スタイル</Label>
+              <div className="flex gap-2">
+                {(['plain', 'notice', 'emphasis'] as const).map((s) => {
+                  const opts = (field.options as { style?: string } | undefined) ?? undefined
+                  const current = (opts?.style === 'notice' || opts?.style === 'emphasis')
+                    ? opts.style
+                    : 'plain'
+                  const label = s === 'plain' ? 'プレーン' : s === 'notice' ? '注意書き枠' : '強調枠'
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        const prev = (field.options as Record<string, unknown> | undefined) ?? {}
+                        updateField({ options: { ...prev, style: s } as unknown as string[] })
+                      }}
+                      className={`text-xs px-3 py-1.5 rounded-md border ${
+                        current === s
+                          ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
+                          : 'border-[hsl(var(--border))]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">リンクテキスト（任意）</Label>
+              <Input
+                value={((field.options as { linkText?: string } | undefined)?.linkText) ?? ''}
+                onChange={(e) => {
+                  const prev = (field.options as Record<string, unknown> | undefined) ?? {}
+                  updateField({ options: { ...prev, linkText: e.target.value } as unknown as string[] })
+                }}
+                className="text-sm h-9"
+                placeholder="詳細はこちら"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">リンクURL（任意）</Label>
+              <Input
+                type="url"
+                value={field.linkUrl ?? ''}
+                onChange={(e) => updateField({ linkUrl: e.target.value })}
+                className="text-sm h-9"
+                placeholder="https://example.com/page"
+              />
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                リンクテキストと URL を両方入力すると、本文の下にリンクが表示されます。
+              </p>
+            </div>
+          </>
+        )}
+
         {/* プレースホルダー（レイアウト以外） */}
         {!isLayoutField && field.type !== 'agree' && (
           <div className="space-y-1">
