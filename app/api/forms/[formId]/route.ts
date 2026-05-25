@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { canDeleteForm, canEditForm } from '@/lib/access'
+import { isAbsoluteHttpUrl } from '@/lib/validations/url'
 
 /** GET /api/forms/:formId - フォーム詳細を取得 */
 export async function GET(
@@ -59,6 +60,55 @@ export async function PUT(
     const edit = await canEditForm(user, formId)
     if (!edit.allowed) {
       return NextResponse.json({ error: '編集権限がありません' }, { status: 403 })
+    }
+
+    // PARAGRAPH フィールドのバリデーション
+    if (Array.isArray(steps)) {
+      for (const step of steps) {
+        if (!Array.isArray(step.fields)) continue
+        for (const f of step.fields) {
+          const fType = typeof f.type === 'string' ? f.type.toLowerCase() : ''
+          if (fType !== 'paragraph') continue
+
+          // 本文必須 (label に格納)
+          const bodyText = typeof f.label === 'string' ? f.label.trim() : ''
+          if (!bodyText) {
+            return NextResponse.json(
+              { error: '段落ブロックの本文を入力してください' },
+              { status: 400 },
+            )
+          }
+
+          // スタイル: 想定外値は弾く
+          const opts = (f.options ?? {}) as { style?: string; linkText?: string }
+          if (opts.style !== undefined && !['plain', 'notice', 'emphasis'].includes(opts.style)) {
+            return NextResponse.json(
+              { error: '段落ブロックのスタイル指定が不正です' },
+              { status: 400 },
+            )
+          }
+
+          // リンク URL: http/https のみ
+          if (f.linkUrl) {
+            if (typeof f.linkUrl !== 'string' || !isAbsoluteHttpUrl(f.linkUrl)) {
+              return NextResponse.json(
+                { error: 'リンク URL は http:// または https:// で始まる必要があります' },
+                { status: 400 },
+              )
+            }
+          }
+
+          // リンクテキストと URL のセット入力
+          const hasLinkText = typeof opts.linkText === 'string' && opts.linkText.trim() !== ''
+          const hasLinkUrl = typeof f.linkUrl === 'string' && f.linkUrl.trim() !== ''
+          if (hasLinkText !== hasLinkUrl) {
+            return NextResponse.json(
+              { error: 'リンクテキストと URL は両方入力してください' },
+              { status: 400 },
+            )
+          }
+        }
+      }
     }
 
     // ステップとフィールドの更新（トランザクション）
