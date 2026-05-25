@@ -34,9 +34,9 @@ export default function ClientFormDetailPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    // 代理店・管理者はビルダーへリダイレクト
+    // 代理店・管理者・CLIENT_EDITOR はビルダーへリダイレクト（CLIENTのみ公開URL表示画面に留まる）
     fetch('/api/me').then((r) => r.json()).then((u) => {
-      if (u.role === 'AGENCY' || u.role === 'SUPER_ADMIN') {
+      if (u.role === 'AGENCY' || u.role === 'SUPER_ADMIN' || u.role === 'CLIENT_EDITOR') {
         router.replace(`/forms/${formId}/edit`)
       }
     }).catch(() => {})

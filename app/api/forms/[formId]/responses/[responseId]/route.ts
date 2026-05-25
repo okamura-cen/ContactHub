@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { ResponseStatus } from '@prisma/client'
 import { logAudit } from '@/lib/audit'
+import { canAccessForm } from '@/lib/access'
 
 type Params = { params: Promise<{ formId: string; responseId: string }> }
 
@@ -16,10 +17,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const form = await prisma.form.findFirst({
-      where: { id: formId, OR: [{ userId: user.id }, { clientId: user.id }] },
-    })
-    if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
+    // アクセス権チェック (AGENCY/SUPER_ADMIN owner または CLIENT/CLIENT_EDITOR 担当)
+    if (!(await canAccessForm(user, formId))) {
+      return NextResponse.json({ error: 'アクセス権限がありません' }, { status: 403 })
+    }
 
     const body = await req.json()
     const updateData: { isRead?: boolean; responseStatus?: ResponseStatus; memo?: string } = {}
@@ -51,10 +52,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const form = await prisma.form.findFirst({
-      where: { id: formId, OR: [{ userId: user.id }, { clientId: user.id }] },
-    })
-    if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 })
+    // アクセス権チェック (AGENCY/SUPER_ADMIN owner または CLIENT/CLIENT_EDITOR 担当)
+    if (!(await canAccessForm(user, formId))) {
+      return NextResponse.json({ error: 'アクセス権限がありません' }, { status: 403 })
+    }
 
     await prisma.response.delete({ where: { id: responseId, formId } })
 

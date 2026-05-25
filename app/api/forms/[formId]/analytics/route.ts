@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { canAccessForm } from '@/lib/access'
 
 /** GET /api/forms/:formId/analytics - EFO分析データを取得 */
 export async function GET(
@@ -15,11 +16,13 @@ export async function GET(
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const form = await prisma.form.findFirst({
-      where: {
-        id: formId,
-        OR: [{ userId: user.id }, { clientId: user.id }],
-      },
+    // アクセス権チェック (AGENCY/SUPER_ADMIN owner または CLIENT/CLIENT_EDITOR 担当)
+    if (!(await canAccessForm(user, formId))) {
+      return NextResponse.json({ error: 'アクセス権限がありません' }, { status: 403 })
+    }
+
+    const form = await prisma.form.findUnique({
+      where: { id: formId },
       include: {
         steps: { orderBy: { order: 'asc' }, select: { id: true, title: true, order: true } },
       },

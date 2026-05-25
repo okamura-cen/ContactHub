@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
 
-    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
-    const formWhere = user.role === 'CLIENT'
+    // CLIENT/CLIENT_EDITORは割り当てられたフォーム、AGENCY/SUPER_ADMINは自分が所有するフォーム
+    const formWhere = (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR')
       ? { clientId: user.id }
       : { userId: user.id }
 

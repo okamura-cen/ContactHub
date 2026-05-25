@@ -14,9 +14,9 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // CLIENTの場合は担当代理店情報とロゴも返す
+  // CLIENT/CLIENT_EDITOR の場合は担当代理店情報とロゴも返す
   let agencyInfo = null
-  if (user.role === 'CLIENT') {
+  if (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR') {
     const rel = await prisma.agencyClient.findFirst({
       where: { clientId: user.id },
       include: {

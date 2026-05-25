@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { canCreateForm } from '@/lib/access'
 
 /** GET /api/forms - ユーザーのフォーム一覧を取得 */
 export async function GET() {
@@ -15,8 +16,8 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
-    const where = user.role === 'CLIENT'
+    // CLIENT/CLIENT_EDITOR は割り当てられたフォーム、AGENCY/SUPER_ADMIN は自分が所有するフォーム
+    const where = (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR')
       ? { clientId: user.id }
       : { userId: user.id }
 
@@ -36,7 +37,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/forms - 新規フォームを作成 */
+/** POST /api/forms - 新規フォームを作成 (AGENCY/SUPER_ADMIN のみ) */
 export async function POST(req: NextRequest) {
   try {
     const { userId: clerkId } = await auth()
@@ -53,6 +54,11 @@ export async function POST(req: NextRequest) {
           email: '', // Clerkから取得すべきだが簡易化
         },
       })
+    }
+
+    // フォーム新規作成権チェック
+    if (!canCreateForm(user)) {
+      return NextResponse.json({ error: 'フォーム作成権限がありません' }, { status: 403 })
     }
 
     const body = await req.json()

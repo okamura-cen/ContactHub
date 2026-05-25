@@ -11,7 +11,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   // ロールに応じて対象記事をフィルタ
-  const audiences = user.role === 'CLIENT'
+  const audiences = (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR')
     ? ['client', 'common']
     : ['agency', 'common'] // AGENCY + SUPER_ADMIN
 

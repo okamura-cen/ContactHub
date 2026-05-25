@@ -11,8 +11,8 @@ export async function GET() {
     const user = await prisma.user.findUnique({ where: { clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    // CLIENTは割り当てられたフォーム、AGENCYは自分が所有するフォーム
-    const formWhere = user.role === 'CLIENT'
+    // CLIENT/CLIENT_EDITORは割り当てられたフォーム、AGENCY/SUPER_ADMINは自分が所有するフォーム
+    const formWhere = (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR')
       ? { clientId: user.id }
       : { userId: user.id }
 

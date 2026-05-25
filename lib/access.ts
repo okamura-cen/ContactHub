@@ -28,9 +28,9 @@ export async function agencyHasClient(agencyId: string, clientId: string): Promi
 
 /**
  * フォームへのアクセス権チェック
- * - SUPER_ADMIN: 自分が所有するフォーム（AGENCY同様に自分のデータのみ扱う）
+ * - SUPER_ADMIN: 自分が所有するフォーム
  * - AGENCY: 自分が所有するフォーム
- * - CLIENT: 自分に割り当てられたフォーム
+ * - CLIENT / CLIENT_EDITOR: 自分に割り当てられたフォーム
  */
 export async function canAccessForm(
   user: User,
@@ -43,15 +43,19 @@ export async function canAccessForm(
   if (!form) return false
 
   if (user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') return form.userId === user.id
-  if (user.role === 'CLIENT') return form.clientId === user.id
+  if (user.role === 'CLIENT' || user.role === 'CLIENT_EDITOR') return form.clientId === user.id
 
   return false
 }
 
 /**
  * フォームの編集権チェック
- * - AGENCY: 自分が所有するフォームのみ（デザイン・設定含む全操作）
- * - CLIENT: 自分に割り当てられたフォームの項目追加・編集のみ
+ * - AGENCY/SUPER_ADMIN: 自分が所有するフォーム (allowed=true, fullAccess=true)
+ * - CLIENT_EDITOR: 自分に割り当てられたフォーム (allowed=true, fullAccess=true)
+ * - CLIENT: 編集不可 (allowed=false)
+ *
+ * fullAccess は将来「項目編集のみ」と「全編集」を分けたくなったときの拡張点。
+ * 現仕様では CLIENT_EDITOR と AGENCY/SUPER_ADMIN は同等扱い。
  */
 export async function canEditForm(
   user: User,
@@ -66,9 +70,24 @@ export async function canEditForm(
   if ((user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') && form.userId === user.id) {
     return { allowed: true, fullAccess: true }
   }
-  if (user.role === 'CLIENT' && form.clientId === user.id) {
-    return { allowed: true, fullAccess: false } // 項目編集のみ
+  if (user.role === 'CLIENT_EDITOR' && form.clientId === user.id) {
+    return { allowed: true, fullAccess: true }
   }
-
+  // CLIENT は閲覧のみ、編集不可
   return { allowed: false, fullAccess: false }
+}
+
+/** フォーム新規作成権 — AGENCY/SUPER_ADMIN のみ */
+export function canCreateForm(user: User): boolean {
+  return user.role === 'AGENCY' || user.role === 'SUPER_ADMIN'
+}
+
+/** フォーム削除権 — AGENCY/SUPER_ADMIN ∧ owner のみ */
+export function canDeleteForm(user: User, form: { userId: string }): boolean {
+  return (user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') && form.userId === user.id
+}
+
+/** ライセンス購入権 — AGENCY/SUPER_ADMIN ∧ owner のみ */
+export function canPurchaseLicense(user: User, form: { userId: string }): boolean {
+  return (user.role === 'AGENCY' || user.role === 'SUPER_ADMIN') && form.userId === user.id
 }

@@ -29,6 +29,7 @@ interface ClientDetail {
   id: string
   name: string | null
   email: string
+  role: 'CLIENT' | 'CLIENT_EDITOR'
   createdAt: string
 }
 
@@ -53,7 +54,7 @@ export default function ClientDetailPage() {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [assigning, setAssigning] = useState(false)
   // アカウント設定
-  const [accountForm, setAccountForm] = useState({ name: '', email: '', password: '' })
+  const [accountForm, setAccountForm] = useState({ name: '', email: '', password: '', role: 'CLIENT' as 'CLIENT' | 'CLIENT_EDITOR' })
   const [savingAccount, setSavingAccount] = useState(false)
 
   const load = async () => {
@@ -69,7 +70,7 @@ export default function ClientDetailPage() {
       if (found) {
         setRelation(found)
         setLogoUrl(found.logoUrl || '')
-        setAccountForm({ name: found.client.name ?? '', email: found.client.email, password: '' })
+        setAccountForm({ name: found.client.name ?? '', email: found.client.email, password: '', role: found.client.role })
       } else {
         router.push('/clients')
       }
@@ -147,6 +148,7 @@ export default function ClientDetailPage() {
     if (trimmedName !== (relation.client.name ?? '')) body.name = trimmedName
     if (trimmedEmail !== relation.client.email) body.email = trimmedEmail
     if (accountForm.password) body.password = accountForm.password
+    if (accountForm.role !== relation.client.role) body.role = accountForm.role
 
     if (Object.keys(body).length === 0) {
       toast({ title: '変更がありません', variant: 'destructive' })
@@ -166,6 +168,7 @@ export default function ClientDetailPage() {
       if ('name' in body) parts.push('名前')
       if ('email' in body) parts.push('メール')
       if ('password' in body) parts.push('パスワード（通知メール送信）')
+      if ('role' in body) parts.push('権限')
       toast({ title: `更新しました: ${parts.join('、')}`, variant: 'success' })
       if (data.warning) {
         toast({ title: data.warning, variant: 'destructive' })
@@ -295,6 +298,17 @@ export default function ClientDetailPage() {
                 onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
               />
             </div>
+          </div>
+          <div>
+            <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">権限</label>
+            <select
+              value={accountForm.role}
+              onChange={(e) => setAccountForm({ ...accountForm, role: e.target.value as 'CLIENT' | 'CLIENT_EDITOR' })}
+              className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
+            >
+              <option value="CLIENT">閲覧のみ (クライアント)</option>
+              <option value="CLIENT_EDITOR">フォーム編集可 (編集者クライアント)</option>
+            </select>
           </div>
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             パスワード変更時は、新パスワードを記載した通知メールがクライアントに自動送信されます。

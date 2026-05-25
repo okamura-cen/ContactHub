@@ -16,12 +16,13 @@ interface ClientRelation {
     id: string
     name: string | null
     email: string
+    role: 'CLIENT' | 'CLIENT_EDITOR'
     createdAt: string
     _count: { clientForms: number }
   }
 }
 
-const emptyForm = { name: '', email: '', password: '' }
+const emptyForm = { name: '', email: '', password: '', role: 'CLIENT' as 'CLIENT' | 'CLIENT_EDITOR' }
 
 export default function ClientsPage() {
   const router = useRouter()
@@ -131,6 +132,20 @@ export default function ClientsPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="text-xs text-[hsl(var(--muted-foreground))] mb-1 block">権限</label>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value as 'CLIENT' | 'CLIENT_EDITOR' })}
+                className="w-full h-10 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm"
+              >
+                <option value="CLIENT">閲覧のみ (クライアント)</option>
+                <option value="CLIENT_EDITOR">フォーム編集可 (編集者クライアント)</option>
+              </select>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                「フォーム編集可」を選ぶと、クライアントが担当フォームの項目を編集できるようになります。
+              </p>
+            </div>
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
               ※ 作成後、入力したメールアドレスにログイン案内メールが自動送信されます。
             </p>
@@ -173,6 +188,7 @@ export default function ClientsPage() {
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]">
                   <th className="text-left p-3 font-medium">クライアント</th>
                   <th className="text-left p-3 font-medium">メール</th>
+                  <th className="text-left p-3 font-medium">権限</th>
                   <th className="text-left p-3 font-medium">フォーム数</th>
                   <th className="text-left p-3 font-medium">追加日</th>
                   <th className="p-3"></th>
@@ -199,6 +215,13 @@ export default function ClientsPage() {
                       </div>
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">{rel.client.email}</td>
+                    <td className="p-3">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        rel.client.role === 'CLIENT_EDITOR' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {rel.client.role === 'CLIENT_EDITOR' ? '編集者クライアント' : 'クライアント'}
+                      </span>
+                    </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">{rel.client._count.clientForms}件</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(rel.createdAt).toLocaleDateString('ja-JP')}

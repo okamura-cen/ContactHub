@@ -64,6 +64,8 @@ function FormBuilderContent() {
         router.replace(`/forms/${formId}`)
         return
       }
+      // CLIENT_EDITOR は編集可だがライセンス購入権限は無いためクライアント扱いで UI を制御
+      if (u.role === 'CLIENT_EDITOR') setIsClient(true)
       if (u.role === 'SUPER_ADMIN') setIsSuperAdmin(true)
     }).catch(() => {})
   }, [formId, router])

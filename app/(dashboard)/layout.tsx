@@ -37,7 +37,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setIsAgency(true) // SUPER_ADMINは自分を代理店として扱う
       }
       if (u.role === 'AGENCY') setIsAgency(true)
-      if (u.role === 'CLIENT') {
+      if (u.role === 'CLIENT' || u.role === 'CLIENT_EDITOR') {
+        // CLIENT_EDITOR は CLIENT と同じナビゲーション表示にする
         setIsClient(true)
         if (u.agencyInfo) setAgencyInfo(u.agencyInfo)
       }

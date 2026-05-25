@@ -7,7 +7,12 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { UserPlus, Trash2, Pencil } from 'lucide-react'
 
-const ROLE_LABELS = { SUPER_ADMIN: 'スーパーアドミン', AGENCY: '代理店', CLIENT: 'クライアント' } as const
+const ROLE_LABELS = {
+  SUPER_ADMIN: 'スーパーアドミン',
+  AGENCY: '代理店',
+  CLIENT: 'クライアント',
+  CLIENT_EDITOR: '編集者クライアント',
+} as const
 
 type Role = keyof typeof ROLE_LABELS
 
@@ -219,13 +224,14 @@ export default function AdminUsersPage() {
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         u.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-700' :
                         u.role === 'AGENCY' ? 'bg-blue-100 text-blue-700' :
+                        u.role === 'CLIENT_EDITOR' ? 'bg-green-100 text-green-700' :
                         'bg-gray-100 text-gray-600'
                       }`}>
                         {ROLE_LABELS[u.role]}
                       </span>
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">
-                      {u.role === 'CLIENT' ? u._count.clientForms : u._count.forms}件
+                      {(u.role === 'CLIENT' || u.role === 'CLIENT_EDITOR') ? u._count.clientForms : u._count.forms}件
                     </td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))] whitespace-nowrap">
                       {new Date(u.createdAt).toLocaleDateString('ja-JP')}
