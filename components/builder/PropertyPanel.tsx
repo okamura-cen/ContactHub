@@ -24,7 +24,7 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
   }
 
   const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type)
-  const isLayoutField = ['heading', 'divider'].includes(field.type)
+  const isLayoutField = ['heading', 'divider', 'paragraph'].includes(field.type)
 
   const updateField = (updates: Partial<BuilderField>) => {
     onChange({ ...field, ...updates })
