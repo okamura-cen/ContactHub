@@ -33,6 +33,7 @@ import { RadioField } from './fields/RadioField'
 import { CheckboxField } from './fields/CheckboxField'
 import { AgreeField } from './fields/AgreeField'
 import { FileField } from './fields/FileField'
+import { ParagraphBlock } from './fields/ParagraphBlock'
 
 interface FormRendererProps {
   fields: BuilderField[]
@@ -189,12 +190,27 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
                 {field.label}
               </h3>
             )
-          case 'paragraph':
+          case 'paragraph': {
+            // PARAGRAPH 用に options を { style?, linkText? } として解釈
+            // BuilderField.options は string[] だがランタイムでは object が入る場合があるため
+            // unknown 経由でキャストする
+            const rawOptions = field.options as unknown as
+              | { style?: string; linkText?: string }
+              | undefined
+            const paragraphStyle: 'plain' | 'notice' | 'emphasis' =
+              rawOptions?.style === 'notice' || rawOptions?.style === 'emphasis'
+                ? rawOptions.style
+                : 'plain'
             return (
-              <p key={field.id} className="text-sm text-[hsl(var(--muted-foreground))] whitespace-pre-wrap leading-relaxed">
-                {field.label}
-              </p>
+              <ParagraphBlock
+                key={field.id}
+                body={field.label}
+                style={paragraphStyle}
+                linkText={rawOptions?.linkText}
+                linkUrl={field.linkUrl}
+              />
             )
+          }
           case 'divider':
             return <hr key={field.id} className="border-[hsl(var(--border))]" />
           default:
