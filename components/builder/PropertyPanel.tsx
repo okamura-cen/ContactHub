@@ -31,18 +31,19 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
   }
 
   const updateOption = (index: number, value: string) => {
-    const options = [...(field.options || [])]
+    const options = [...(Array.isArray(field.options) ? field.options : [])]
     options[index] = value
     updateField({ options })
   }
 
   const addOption = () => {
-    updateField({ options: [...(field.options || []), `選択肢${(field.options?.length || 0) + 1}`] })
+    const prev = Array.isArray(field.options) ? field.options : []
+    updateField({ options: [...prev, `選択肢${prev.length + 1}`] })
   }
 
   const removeOption = (index: number) => {
-    const options = (field.options || []).filter((_, i) => i !== index)
-    updateField({ options })
+    const prev = Array.isArray(field.options) ? field.options : []
+    updateField({ options: prev.filter((_, i) => i !== index) })
   }
 
   return (
@@ -90,7 +91,7 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
                       type="button"
                       onClick={() => {
                         const prev = (field.options as Record<string, unknown> | undefined) ?? {}
-                        updateField({ options: { ...prev, style: s } as unknown as string[] })
+                        updateField({ options: { ...prev, style: s } })
                       }}
                       className={`text-xs px-3 py-1.5 rounded-md border ${
                         current === s
@@ -111,7 +112,7 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
                 value={((field.options as { linkText?: string } | undefined)?.linkText) ?? ''}
                 onChange={(e) => {
                   const prev = (field.options as Record<string, unknown> | undefined) ?? {}
-                  updateField({ options: { ...prev, linkText: e.target.value } as unknown as string[] })
+                  updateField({ options: { ...prev, linkText: e.target.value } })
                 }}
                 className="text-sm h-9"
                 placeholder="詳細はこちら"
@@ -196,7 +197,7 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
         {hasOptions && (
           <div className="space-y-2">
             <Label className="text-xs">選択肢</Label>
-            {(field.options || []).map((opt, i) => (
+            {(Array.isArray(field.options) ? field.options : []).map((opt, i) => (
               <div key={i} className="flex gap-1">
                 <Input
                   value={opt}

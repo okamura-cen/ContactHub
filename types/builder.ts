@@ -40,7 +40,10 @@ export interface BuilderField {
   placeholder?: string
   helpText?: string
   required: boolean
-  options?: string[]
+  /** select/radio/checkbox: 選択肢一覧
+   *  paragraph: { style: 'plain'|'notice'|'emphasis', linkText?: string }
+   *  フィールドタイプによって意味が変わるため Record で柔軟に。 */
+  options?: string[] | Record<string, unknown>
   efoSettings?: EfoSettings
   logic?: FieldLogic
   // agree 型でラベル横に表示する外部リンクURL（例: 個人情報の取り扱いページ）

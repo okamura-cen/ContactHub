@@ -139,7 +139,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <SelectField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string) || ''}
                 onChange={(v) => onChange(field.id, v)}
               />
@@ -149,7 +149,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <RadioField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string) || ''}
                 onChange={(v) => onChange(field.id, v)}
               />
@@ -159,7 +159,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <CheckboxField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string[]) || []}
                 onChange={(v) => onChange(field.id, v)}
               />
