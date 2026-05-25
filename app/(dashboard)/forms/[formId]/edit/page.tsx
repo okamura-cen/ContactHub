@@ -287,6 +287,46 @@ function FormBuilderContent() {
       toast({ title: 'フォームを公開するにはライセンスの購入が必要です', variant: 'destructive' })
       return
     }
+
+    // PARAGRAPH フィールドのクライアント側バリデーション
+    for (const step of steps) {
+      for (const f of step.fields) {
+        if (f.type !== 'paragraph') continue
+
+        if (!f.label || !f.label.trim()) {
+          toast({ title: '段落ブロックの本文を入力してください', variant: 'destructive' })
+          return
+        }
+
+        const opts = (Array.isArray(f.options) ? undefined : f.options) as { linkText?: string } | undefined
+        const hasLinkText = !!(opts?.linkText && opts.linkText.trim())
+        const hasLinkUrl = !!(f.linkUrl && f.linkUrl.trim())
+
+        if (hasLinkText !== hasLinkUrl) {
+          toast({
+            title: 'リンクテキストと URL は両方入力してください',
+            variant: 'destructive',
+          })
+          return
+        }
+
+        if (hasLinkUrl && f.linkUrl) {
+          try {
+            const u = new URL(f.linkUrl)
+            if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+              throw new Error('invalid scheme')
+            }
+          } catch {
+            toast({
+              title: 'リンク URL は http:// または https:// で始まる正しい形式で入力してください',
+              variant: 'destructive',
+            })
+            return
+          }
+        }
+      }
+    }
+
     setSaving(true)
     try {
       const newStatus = publish
