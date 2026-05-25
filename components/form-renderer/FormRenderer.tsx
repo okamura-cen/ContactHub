@@ -191,10 +191,8 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               </h3>
             )
           case 'paragraph': {
-            // PARAGRAPH 用に options を { style?, linkText? } として解釈
-            // BuilderField.options は string[] だがランタイムでは object が入る場合があるため
-            // unknown 経由でキャストする
-            const rawOptions = field.options as unknown as
+            // options を paragraph 用形状にキャスト
+            const rawOptions = field.options as
               | { style?: string; linkText?: string }
               | undefined
             const paragraphStyle: 'plain' | 'notice' | 'emphasis' =
