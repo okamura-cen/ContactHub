@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/toast'
+import { formatFieldValue } from '@/lib/email-template'
 
 const STATUS_CONFIG = {
   PENDING:     { label: '未対応', color: 'bg-red-100 text-red-700' },
@@ -321,7 +322,11 @@ function ResponsesContent() {
                         </div>
                       )
                     } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
-                      display = Object.values(val as object).filter(Boolean).join(' ')
+                      // フィールド種別ごとに正しい順序で整形（NAMEは姓→名、ZIPは郵便番号→住所など）
+                      // JSONキー順に依存していたため「名 姓」順で出ることがあった
+                      display = field
+                        ? formatFieldValue({ type: field.type as Parameters<typeof formatFieldValue>[0]['type'] }, val)
+                        : Object.values(val as object).filter(Boolean).join(' ')
                     } else if (Array.isArray(val)) {
                       display = val.join(', ')
                     } else if (typeof val === 'boolean') {
