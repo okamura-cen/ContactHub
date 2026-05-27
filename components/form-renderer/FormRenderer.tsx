@@ -33,6 +33,7 @@ import { RadioField } from './fields/RadioField'
 import { CheckboxField } from './fields/CheckboxField'
 import { AgreeField } from './fields/AgreeField'
 import { FileField } from './fields/FileField'
+import { ParagraphBlock } from './fields/ParagraphBlock'
 
 interface FormRendererProps {
   fields: BuilderField[]
@@ -138,7 +139,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <SelectField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string) || ''}
                 onChange={(v) => onChange(field.id, v)}
               />
@@ -148,7 +149,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <RadioField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string) || ''}
                 onChange={(v) => onChange(field.id, v)}
               />
@@ -158,7 +159,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
               <CheckboxField
                 key={field.id}
                 {...commonProps}
-                options={field.options || []}
+                options={Array.isArray(field.options) ? field.options : []}
                 value={(values[field.id] as string[]) || []}
                 onChange={(v) => onChange(field.id, v)}
               />
@@ -189,12 +190,25 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
                 {field.label}
               </h3>
             )
-          case 'paragraph':
+          case 'paragraph': {
+            // options を paragraph 用形状にキャスト
+            const rawOptions = field.options as
+              | { style?: string; linkText?: string }
+              | undefined
+            const paragraphStyle: 'plain' | 'notice' | 'emphasis' =
+              rawOptions?.style === 'notice' || rawOptions?.style === 'emphasis'
+                ? rawOptions.style
+                : 'plain'
             return (
-              <p key={field.id} className="text-sm text-[hsl(var(--muted-foreground))] whitespace-pre-wrap leading-relaxed">
-                {field.label}
-              </p>
+              <ParagraphBlock
+                key={field.id}
+                body={field.label}
+                style={paragraphStyle}
+                linkText={rawOptions?.linkText}
+                linkUrl={field.linkUrl}
+              />
             )
+          }
           case 'divider':
             return <hr key={field.id} className="border-[hsl(var(--border))]" />
           default:

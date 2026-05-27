@@ -95,6 +95,27 @@
       wrapper.appendChild(h('hr', { className: 'efo-divider' }));
       return wrapper;
     }
+    if (field.type === 'paragraph') {
+      // options が paragraph 用 object かを判定 (select/radio は配列なので除外)
+      var pOpts = (field.options && typeof field.options === 'object' && !Array.isArray(field.options)) ? field.options : {};
+      var pStyle = (pOpts.style === 'notice' || pOpts.style === 'emphasis') ? pOpts.style : 'plain';
+      var pBody = field.label || '';
+      if (!pBody || !pBody.replace(/\s+/g, '')) return wrapper;  // 空なら何も描画しない
+
+      var pBox = h('div', { className: 'efo-paragraph efo-paragraph--' + pStyle });
+      pBox.appendChild(h('p', { className: 'efo-paragraph-body' }, pBody));
+
+      var pLinkUrl = field.linkUrl;
+      var pLinkText = pOpts.linkText;
+      if (pLinkUrl && pLinkText && /^https?:\/\//i.test(pLinkUrl)) {
+        var pLinkP = h('p', { className: 'efo-paragraph-link' });
+        var pAnchor = h('a', { href: pLinkUrl, target: '_blank', rel: 'noopener noreferrer' }, pLinkText);
+        pLinkP.appendChild(pAnchor);
+        pBox.appendChild(pLinkP);
+      }
+      wrapper.appendChild(pBox);
+      return wrapper;
+    }
 
     // ラベル
     var labelEl = h('label', { className: 'efo-label', for: 'efo-' + field.id }, field.label);
@@ -569,7 +590,7 @@
     var step = state.definition.steps[stepIndex];
     var valid = true;
     step.fields.forEach(function (f) {
-      if (['heading', 'divider'].indexOf(f.type) >= 0) return;
+      if (['heading', 'divider', 'paragraph'].indexOf(f.type) >= 0) return;
       if (validateField(f) !== true) valid = false;
     });
     return valid;
@@ -719,6 +740,14 @@
       '.efo-zip-group { display: flex; flex-direction: column; gap: 0.5rem; }',
       '.efo-heading { font-size: 1.125rem; font-weight: 600; padding-top: 0.5rem; }',
       '.efo-divider { border: none; border-top: 1px solid #e5e7eb; margin: 0.5rem 0; }',
+      /* 段落ブロック (PARAGRAPH) */
+      '.efo-paragraph { margin: 0.75rem 0; font-size: 0.875rem; color: #1f2937; }',
+      '.efo-paragraph-body { margin: 0; white-space: pre-line; line-height: 1.6; }',
+      '.efo-paragraph-link { margin: 0.5rem 0 0; }',
+      '.efo-paragraph-link a { color: #3b82f6; text-decoration: underline; }',
+      '.efo-paragraph-link a:hover { opacity: 0.8; }',
+      '.efo-paragraph--notice { border: 1px solid #e5e7eb; background: #f9fafb; border-radius: 0.375rem; padding: 1rem; }',
+      '.efo-paragraph--emphasis { border-left: 4px solid #3b82f6; background: #eff6ff; border-radius: 0.375rem; padding: 1rem; font-weight: 500; }',
       '.efo-progress { margin-bottom: 1.5rem; }',
       '.efo-progress-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #666; margin-bottom: 0.25rem; }',
       '.efo-progress-bar { height: 0.5rem; background: #e5e7eb; border-radius: 9999px; overflow: hidden; }',

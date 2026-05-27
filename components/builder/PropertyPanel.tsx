@@ -24,25 +24,26 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
   }
 
   const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type)
-  const isLayoutField = ['heading', 'divider'].includes(field.type)
+  const isLayoutField = ['heading', 'divider', 'paragraph'].includes(field.type)
 
   const updateField = (updates: Partial<BuilderField>) => {
     onChange({ ...field, ...updates })
   }
 
   const updateOption = (index: number, value: string) => {
-    const options = [...(field.options || [])]
+    const options = [...(Array.isArray(field.options) ? field.options : [])]
     options[index] = value
     updateField({ options })
   }
 
   const addOption = () => {
-    updateField({ options: [...(field.options || []), `選択肢${(field.options?.length || 0) + 1}`] })
+    const prev = Array.isArray(field.options) ? field.options : []
+    updateField({ options: [...prev, `選択肢${prev.length + 1}`] })
   }
 
   const removeOption = (index: number) => {
-    const options = (field.options || []).filter((_, i) => i !== index)
-    updateField({ options })
+    const prev = Array.isArray(field.options) ? field.options : []
+    updateField({ options: prev.filter((_, i) => i !== index) })
   }
 
   return (
@@ -71,6 +72,68 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
             />
           )}
         </div>
+
+        {/* PARAGRAPH 用の追加設定 */}
+        {field.type === 'paragraph' && (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">スタイル</Label>
+              <div className="flex gap-2">
+                {(['plain', 'notice', 'emphasis'] as const).map((s) => {
+                  const opts = (field.options as { style?: string } | undefined) ?? undefined
+                  const current = (opts?.style === 'notice' || opts?.style === 'emphasis')
+                    ? opts.style
+                    : 'plain'
+                  const label = s === 'plain' ? 'プレーン' : s === 'notice' ? '注意書き枠' : '強調枠'
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        const prev = (field.options as Record<string, unknown> | undefined) ?? {}
+                        updateField({ options: { ...prev, style: s } })
+                      }}
+                      className={`text-xs px-3 py-1.5 rounded-md border ${
+                        current === s
+                          ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
+                          : 'border-[hsl(var(--border))]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">リンクテキスト（任意）</Label>
+              <Input
+                value={((field.options as { linkText?: string } | undefined)?.linkText) ?? ''}
+                onChange={(e) => {
+                  const prev = (field.options as Record<string, unknown> | undefined) ?? {}
+                  updateField({ options: { ...prev, linkText: e.target.value } })
+                }}
+                className="text-sm h-9"
+                placeholder="詳細はこちら"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">リンクURL（任意）</Label>
+              <Input
+                type="url"
+                value={field.linkUrl ?? ''}
+                onChange={(e) => updateField({ linkUrl: e.target.value })}
+                className="text-sm h-9"
+                placeholder="https://example.com/page"
+              />
+              <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                リンクテキストと URL を両方入力すると、本文の下にリンクが表示されます。
+              </p>
+            </div>
+          </>
+        )}
 
         {/* プレースホルダー（レイアウト以外） */}
         {!isLayoutField && field.type !== 'agree' && (
@@ -134,7 +197,7 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
         {hasOptions && (
           <div className="space-y-2">
             <Label className="text-xs">選択肢</Label>
-            {(field.options || []).map((opt, i) => (
+            {(Array.isArray(field.options) ? field.options : []).map((opt, i) => (
               <div key={i} className="flex gap-1">
                 <Input
                   value={opt}
