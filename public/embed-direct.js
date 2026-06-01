@@ -83,6 +83,49 @@
     return str.replace(/[０-９]/g, function (s) { return String.fromCharCode(s.charCodeAt(0) - 0xFEE0); });
   }
 
+  // 条件分岐ロジックを評価してフィールドを表示すべきか判定
+  // （本体側 FormRenderer.tsx の evaluateLogic と同等の挙動）
+  function evaluateLogic(logic, values) {
+    if (!logic || !logic.conditions || logic.conditions.length === 0) return true;
+    var results = logic.conditions.map(function (cond) {
+      var val = values[cond.fieldId];
+      var strVal = typeof val === 'string' ? val : (Array.isArray(val) ? val.join(',') : String(val || ''));
+      switch (cond.operator) {
+        case 'equals': return strVal === (cond.value || '');
+        case 'not_equals': return strVal !== (cond.value || '');
+        case 'contains': return strVal.indexOf(cond.value || '') >= 0;
+        case 'not_empty': return strVal.trim().length > 0;
+        default: return true;
+      }
+    });
+    var matched = logic.operator === 'AND' ? results.every(Boolean) : results.some(Boolean);
+    return logic.action === 'show' ? matched : !matched;
+  }
+
+  // 現在の入力値に基づき、フィールドが表示対象かを判定
+  function isFieldVisible(field) {
+    return evaluateLogic(field.logic, state.values);
+  }
+
+  // 条件分岐に応じて現在ステップのフィールドの表示/非表示を更新する。
+  // DOM を作り直さず display を切り替えるだけなので、入力中のフォーカスを失わない。
+  function applyConditionalVisibility() {
+    if (!state.definition) return;
+    var step = state.definition.steps[state.currentStep];
+    if (!step) return;
+    step.fields.forEach(function (f) {
+      var wrapper = container.querySelector('[data-field-id="' + f.id + '"]');
+      if (!wrapper) return;
+      if (isFieldVisible(f)) {
+        wrapper.style.display = '';
+      } else {
+        wrapper.style.display = 'none';
+        // 非表示になったフィールドのエラー表示は消す
+        clearError(f.id);
+      }
+    });
+  }
+
   // フィールドレンダラー
   function renderField(field) {
     var wrapper = h('div', { className: 'efo-field efo-field--' + field.type, 'data-field-id': field.id });
@@ -466,6 +509,7 @@
             state.values[field.id] = null;
             setLocalError('');
             render(false);
+            applyConditionalVisibility();
           },
         }, '削除'));
         wrapper.appendChild(fileRow);
@@ -552,6 +596,7 @@
           };
           clearError(field.id);
           render(false);
+          applyConditionalVisibility();
         })
         .catch(function () {
           setLocalError('アップロードに失敗しました');
@@ -591,6 +636,8 @@
     var valid = true;
     step.fields.forEach(function (f) {
       if (['heading', 'divider', 'paragraph'].indexOf(f.type) >= 0) return;
+      // 条件分岐で非表示のフィールドは検証しない
+      if (!isFieldVisible(f)) return;
       if (validateField(f) !== true) valid = false;
     });
     return valid;
@@ -652,7 +699,13 @@
     step.fields.forEach(function (f) {
       fieldsContainer.appendChild(renderField(f));
     });
+    // 条件分岐: 入力のたびに表示/非表示を再評価（イベント委譲）
+    fieldsContainer.addEventListener('input', applyConditionalVisibility);
+    fieldsContainer.addEventListener('change', applyConditionalVisibility);
     container.appendChild(fieldsContainer);
+
+    // 初期表示時点の条件分岐を反映
+    applyConditionalVisibility();
 
     // ボタン
     var buttons = h('div', { className: 'efo-buttons' });
@@ -687,11 +740,20 @@
     state.submitting = true;
     render();
 
+    // 条件分岐で非表示のフィールドは送信データから除外する
+    var submitData = {};
+    Object.keys(state.values).forEach(function (k) { submitData[k] = state.values[k]; });
+    state.definition.steps.forEach(function (s) {
+      s.fields.forEach(function (f) {
+        if (!isFieldVisible(f)) delete submitData[f.id];
+      });
+    });
+
     fetch(baseUrl + '/api/forms/' + formId + '/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        data: state.values,
+        data: submitData,
         metadata: { completionTimeMs: Date.now() - state.startTime },
       }),
     })
