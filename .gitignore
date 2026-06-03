@@ -41,3 +41,9 @@ prisma/generated/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Claude Code ローカル設定
+/.claude/
+
+# Imagen 生成物（スクラッチ出力。採用画像は public/ にコピーして管理）
+/imagen/
