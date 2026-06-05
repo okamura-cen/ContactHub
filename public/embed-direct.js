@@ -793,8 +793,17 @@
       '.efo-input--zip { max-width: 10rem; }',
       '.efo-error { font-size: 0.75rem; color: #e53e3e; margin-top: 0.25rem; display: none; }',
       '.efo-help { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }',
-      '.efo-radio-group, .efo-checkbox-group { display: flex; flex-direction: column; gap: 0.5rem; }',
+      /* ラジオ／チェックボックスの選択肢グループ。
+         デフォルトは横並び（折り返しあり）。縦に戻したい場合は埋め込み先で
+         `.efo-form-container { --efo-options-direction: column; }` を1行書けばよい（!important 不要）。
+         隙間は --efo-options-gap（縦 横）で調整可能。 */
+      '.efo-radio-group, .efo-checkbox-group { display: flex; flex-direction: var(--efo-options-direction, row); flex-wrap: wrap; gap: var(--efo-options-gap, 0.5rem 1.25rem); align-items: flex-start; }',
       '.efo-radio-label, .efo-checkbox-label, .efo-agree-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; min-height: 2.75rem; }',
+      /* 選択肢ラベルは項目内で折り返さない／input は潰れないように固定サイズ */
+      '.efo-radio-label, .efo-checkbox-label { white-space: nowrap; }',
+      '.efo-radio, .efo-checkbox { flex: none; }',
+      /* 狭い画面では縦並びに戻す（フォールバック値のみ変更するため、明示指定した --efo-options-direction は引き続き有効） */
+      '@media (max-width: 480px) { .efo-radio-group, .efo-checkbox-group { flex-direction: var(--efo-options-direction, column); } }',
       '.efo-radio-label:hover, .efo-checkbox-label:hover, .efo-agree-label:hover { background: #f3f4f6; }',
       '.efo-agree-link { color: #3b82f6; text-decoration: underline; font-size: 0.875rem; margin-left: 0.25rem; }',
       '.efo-agree-link:hover { opacity: 0.8; }',
