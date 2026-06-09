@@ -254,6 +254,11 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
             }
           }
 
+          // 条件分岐をまるごと削除（設定を解除）する
+          const clearLogic = () => {
+            updateField({ logic: undefined })
+          }
+
           return (
             <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
               <div className="flex items-center justify-between">
@@ -261,6 +266,16 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
                 {!hasLogic && otherFields.length > 0 && (
                   <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={addCondition}>
                     + 条件を追加
+                  </Button>
+                )}
+                {hasLogic && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-6 px-2 text-[hsl(var(--destructive))]"
+                    onClick={clearLogic}
+                  >
+                    条件分岐を削除
                   </Button>
                 )}
               </div>
