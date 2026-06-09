@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ContactHub 情報セキュリティ・情報管理体制について｜株式会社CEN</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --fg-muted: #555;
+    --line: #e5e5e5;
+    --accent: #c2793d;          /* ContactHub くすみオレンジ */
+    --accent-deep: #a3622d;
+    --bg-soft: #faf7f4;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif;
+    color: var(--fg);
+    line-height: 1.8;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 56px 32px 96px; }
+
+  header.doc {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .logo { height: 26px; width: auto; margin-bottom: 22px; display: block; }
+  .eyebrow {
+    font-size: 12px; color: var(--accent); letter-spacing: 0.12em;
+    font-weight: 700; margin: 0 0 10px;
+  }
+  h1 { font-size: 25px; font-weight: 700; margin: 0 0 14px; letter-spacing: -0.01em; line-height: 1.4; }
+  .lead { font-size: 14.5px; color: var(--fg-muted); margin: 0; }
+  .meta {
+    margin-top: 22px; font-size: 13px; color: var(--fg-muted);
+    display: flex; flex-wrap: wrap; gap: 6px 28px;
+  }
+  .meta b { color: var(--fg); font-weight: 600; }
+
+  section { margin-top: 40px; }
+  h2 {
+    font-size: 17px; font-weight: 700; margin: 0 0 16px;
+    padding-left: 12px; border-left: 4px solid var(--accent); line-height: 1.4;
+  }
+  .num { color: var(--accent-deep); font-weight: 700; margin-right: 6px; }
+  p { margin: 0 0 12px; font-size: 14.5px; }
+  ul { margin: 0; padding-left: 1.2em; }
+  li { font-size: 14.5px; margin-bottom: 8px; }
+  .muted { color: var(--fg-muted); }
+
+  /* 事業者情報テーブル */
+  table.info { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.info th, table.info td {
+    text-align: left; padding: 11px 14px; border: 1px solid var(--line); vertical-align: top;
+  }
+  table.info th { background: var(--bg-soft); width: 34%; font-weight: 600; white-space: nowrap; }
+
+  /* サブプロセッサ表 */
+  table.subp { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.subp th, table.subp td { text-align: left; padding: 10px 14px; border: 1px solid var(--line); }
+  table.subp thead th { background: var(--accent); color: #fff; font-weight: 600; }
+  table.subp tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+  .note {
+    margin-top: 14px; padding: 14px 16px; background: var(--bg-soft);
+    border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--fg-muted);
+  }
+  .note b { color: var(--fg); }
+
+  a { color: var(--accent-deep); }
+
+  footer.doc {
+    margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--fg-muted); line-height: 1.7;
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 36px 20px 64px; }
+    h1 { font-size: 21px; }
+    table.info th { width: 40%; }
+  }
+  @media print {
+    .wrap { padding: 16px; max-width: none; }
+    section, table { break-inside: avoid; }
+    a { color: var(--fg); text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="doc">
+      <img class="logo" src="/contacthub_logo_yoko.svg" alt="ContactHub">
+      <p class="eyebrow">INFORMATION SECURITY</p>
+      <h1>情報セキュリティ・情報管理体制について</h1>
+      <p class="lead">本書は、フォーム作成サービス「ContactHub」における情報の取り扱いおよび管理体制について説明するものです。</p>
+      <div class="meta">
+        <span><b>提供事業者</b>　株式会社CEN</span>
+        <span><b>最終更新</b>　2026年6月</span>
+      </div>
+    </header>
+
+    <section>
+      <h2><span class="num">1.</span>事業者情報</h2>
+      <table class="info">
+        <tr><th>サービス名</th><td>ContactHub（フォーム作成サービス）</td></tr>
+        <tr><th>提供事業者</th><td>株式会社CEN</td></tr>
+        <tr><th>所在地</th><td>北海道札幌市</td></tr>
+        <tr><th>お問い合わせ窓口</th><td>okamura@c-1000.co.jp<br><span class="muted">（情報セキュリティ・個人情報の取り扱いに関する窓口）</span></td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2><span class="num">2.</span>取り扱う情報と利用目的</h2>
+      <p>ContactHub は、Webフォームの作成・公開・回答管理を行うクラウドサービスです。本サービスでは以下の情報を取り扱います。</p>
+      <ul>
+        <li><b>フォーム回答情報</b>：エンドユーザーがフォームに入力した氏名・連絡先・お問い合わせ内容等</li>
+        <li><b>利用者アカウント情報</b>：本サービスを利用する企業・担当者のアカウント情報</li>
+      </ul>
+      <p class="muted">これらの情報は、フォーム機能の提供および回答データの管理という目的の範囲内でのみ利用します。</p>
+    </section>
+
+    <section>
+      <h2><span class="num">3.</span>データの保管場所（国内処理）</h2>
+      <p>本サービスのデータは、すべて日本国内（東京リージョン）で処理・保管しています。海外へのデータ移転は行っていません。</p>
+      <ul>
+        <li><b>アプリケーション配信</b>：Vercel（東京リージョン）</li>
+        <li><b>データベース・ストレージ</b>：Supabase（東京リージョン）</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">4.</span>外部委託先（サブプロセッサ）</h2>
+      <p>本サービスの運用にあたり、以下の事業者に処理の一部を委託しています。</p>
+      <table class="subp">
+        <thead>
+          <tr><th>委託先</th><th>用途</th><th>主な準拠・認証</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Vercel</td><td>ホスティング・配信</td><td>SOC 2 Type II</td></tr>
+          <tr><td>Supabase</td><td>データベース・ストレージ</td><td>SOC 2 Type II</td></tr>
+          <tr><td>Clerk</td><td>認証基盤（ログイン管理）</td><td>SOC 2 Type II</td></tr>
+          <tr><td>Stripe</td><td>決済処理</td><td>PCI DSS Level 1</td></tr>
+          <tr><td>Resend</td><td>メール配信</td><td>—</td></tr>
+          <tr><td>Google reCAPTCHA</td><td>スパム・不正送信対策</td><td>ISO/IEC 27001 等</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <b>機微情報の取り扱い：</b>ログインパスワードは認証基盤（Clerk）、クレジットカード情報は決済事業者（Stripe）の側で安全に管理されており、<b>当社のデータベースに平文で保持することはありません。</b>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">5.</span>アクセス制御・認証</h2>
+      <ul>
+        <li>権限（ロール）ベースのアクセス制御により、管理者・代理店・クライアント・編集者の各権限を分離し、最小権限の原則で運用しています。</li>
+        <li>代理店ごと・クライアントごとのデータは論理的に分離され、権限のない他者のデータにはアクセスできません。</li>
+        <li>管理画面のログインには認証基盤（Clerk）を採用し、多要素認証（MFA）に対応しています。</li>
+        <li>本番データにアクセスできる担当者を限定して運用しています。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">6.</span>通信・保管時の暗号化</h2>
+      <ul>
+        <li><b>通信</b>：すべての通信を TLS（HTTPS）により暗号化しています。</li>
+        <li><b>保管</b>：データベースおよびストレージは、基盤（Supabase）の機能により保管時に暗号化されています。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">7.</span>バックアップ・可用性</h2>
+      <ul>
+        <li>データベースは Supabase Pro プランにより日次でバックアップを取得しています（7日間保持）。</li>
+        <li>障害発生時は、バックアップからの復旧を行います。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">8.</span>ログ・監査</h2>
+      <p>管理画面での主要な操作は監査ログとして記録し、追跡できる体制としています。</p>
+    </section>
+
+    <section>
+      <h2><span class="num">9.</span>データの保持・削除</h2>
+      <ul>
+        <li>利用（ライセンス）契約が満了したフォームは、満了時点で自動的に非公開（アーカイブ）化されます。</li>
+        <li>契約満了から約1年（365日）が経過した後、当該フォームの送信データ（回答）を日次の自動処理で削除します。</li>
+        <li>契約終了に伴うデータ削除のご依頼にも個別に対応します。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">10.</span>開発・運用体制</h2>
+      <p>機能の変更は、型チェック・レビューを経てリリースしています。脆弱性や不具合を検知した場合は、継続的に修正・改善を行っています。</p>
+    </section>
+
+    <section>
+      <h2><span class="num">11.</span>インシデント対応</h2>
+      <p>セキュリティ上の事象を検知した場合は、影響範囲を確認のうえ、利用企業さまへ速やかにご連絡します。</p>
+      <p class="muted">連絡窓口：okamura@c-1000.co.jp</p>
+    </section>
+
+    <section>
+      <h2><span class="num">12.</span>法令遵守・契約</h2>
+      <ul>
+        <li>個人情報保護法その他の関係法令を遵守します。</li>
+        <li>個人情報の取り扱いの詳細は、別途プライバシーポリシー（<a href="#">URL は別途掲載</a>）に定めます。</li>
+        <li>ご要望に応じて、秘密保持契約（NDA）および個人データの取り扱いに関する覚書（DPA）の締結に対応します。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">13.</span>第三者認証の取得状況</h2>
+      <p>現時点で、当社は ISMS（ISO/IEC 27001）・プライバシーマーク等の第三者認証を取得しておりません。一方で、上表のとおり主要な委託先各社はそれぞれ第三者認証を取得しており、これらの基盤上で安全にサービスを運用しています。</p>
+    </section>
+
+    <footer class="doc">
+      本書の記載内容は、サービスの改善等に伴い予告なく改定される場合があります。<br>
+      © 株式会社CEN　ContactHub
+    </footer>
+
+  </div>
+</body>
+</html>
