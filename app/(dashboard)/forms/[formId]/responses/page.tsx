@@ -17,7 +17,12 @@ interface FieldInfo {
 interface DisplayColumn {
   key: string
   label: string
+  /** 一覧テーブル用の表示値（繰り返しは「、」区切り） */
   getValue: (data: Record<string, unknown>) => string
+  /** CSV 用の値（未指定なら getValue を使用。繰り返しは「; 」区切り） */
+  getCsv?: (data: Record<string, unknown>) => string
+  /** 詳細画面の箇条書き用。配列でなければ null */
+  getList?: (data: Record<string, unknown>) => string[] | null
 }
 
 interface ResponseItem {
@@ -77,6 +82,33 @@ export default function ResponsesPage() {
                 : `${(val.size / (1024 * 1024)).toFixed(1)}MB`
               : ''
             return val.name ? `${val.name}${size ? ` (${size})` : ''}` : ''
+          },
+        })
+      } else if (f.type === 'TEXT' || f.type === 'DATE') {
+        // text/date：繰り返し入力（配列）に対応。一覧は「、」、CSV は「; 」、詳細は箇条書き
+        const filteredArr = (d: Record<string, unknown>): string[] => {
+          const val = d[f.id]
+          if (!Array.isArray(val)) return []
+          return val.filter((v) => String(v).trim() !== '').map(String)
+        }
+        cols.push({
+          key: f.id,
+          label: f.label,
+          getValue: (d) => {
+            const val = d[f.id]
+            if (Array.isArray(val)) return filteredArr(d).join('、')
+            if (val === null || val === undefined) return ''
+            return String(val)
+          },
+          getCsv: (d) => {
+            const val = d[f.id]
+            if (Array.isArray(val)) return filteredArr(d).join('; ')
+            if (val === null || val === undefined) return ''
+            return String(val)
+          },
+          getList: (d) => {
+            const val = d[f.id]
+            return Array.isArray(val) ? filteredArr(d) : null
           },
         })
       } else {
@@ -159,7 +191,7 @@ export default function ResponsesPage() {
     const headers = ['送信日時', ...columns.map((c) => c.label)]
     const rows = responses.map((r) => {
       const date = new Date(r.createdAt).toLocaleString('ja-JP')
-      const vals = columns.map((c) => c.getValue(r.data))
+      const vals = columns.map((c) => (c.getCsv ? c.getCsv(r.data) : c.getValue(r.data)))
       return [date, ...vals]
     })
     const csv = [headers, ...rows]
@@ -319,6 +351,8 @@ export default function ResponsesPage() {
                 const rawVal = selectedResponse.data[c.key] ?? selectedResponse.data[c.key.split('.')[0]]
                 const isFile = rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal) && 'url' in rawVal
                 const fileVal = isFile ? rawVal as { url: string; name: string; size: number } : null
+                // 繰り返し入力は番号付き箇条書きで表示
+                const listVals = c.getList ? c.getList(selectedResponse.data) : null
                 return (
                   <div key={c.key} className="flex border-b border-[hsl(var(--border))] pb-2">
                     <span className="w-1/3 text-sm font-medium text-[hsl(var(--muted-foreground))]">
@@ -334,6 +368,12 @@ export default function ResponsesPage() {
                         >
                           {c.getValue(selectedResponse.data) || fileVal.name}
                         </a>
+                      ) : listVals && listVals.length > 0 ? (
+                        <ol className="list-decimal list-inside space-y-0.5">
+                          {listVals.map((v, i) => (
+                            <li key={i}>{v}</li>
+                          ))}
+                        </ol>
                       ) : (
                         c.getValue(selectedResponse.data) || '(未入力)'
                       )}

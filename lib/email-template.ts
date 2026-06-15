@@ -29,6 +29,14 @@ export function formatFieldValue(field: Pick<FieldLike, 'type'>, value: unknown)
     case 'CHECKBOX':
       if (Array.isArray(value)) return value.join(', ')
       return String(value)
+    case 'TEXT':
+    case 'DATE':
+      // 繰り返し入力（配列）は番号付き箇条書き、単一値は従来どおり
+      if (Array.isArray(value)) {
+        const items = value.filter((v) => String(v).trim() !== '')
+        return items.map((v, i) => `${i + 1}. ${v}`).join('\n')
+      }
+      return String(value)
     case 'NAME': {
       const v = value as { sei?: string; mei?: string; seiKana?: string; meiKana?: string }
       const name = `${v.sei || ''} ${v.mei || ''}`.trim()
@@ -60,7 +68,9 @@ export function renderAnswersTable(fields: FieldLike[], data: Record<string, unk
     .map((f) => {
       const v = formatFieldValue(f, data[f.id])
       const display = v || '(未入力)'
-      return `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9fafb;">${escapeHtml(f.label)}</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(display)}</td></tr>`
+      // 番号付き箇条書き等の改行は <br> に変換してセル内で改行表示
+      const displayHtml = escapeHtml(display).replace(/\r?\n/g, '<br>')
+      return `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9fafb;">${escapeHtml(f.label)}</td><td style="padding:8px;border:1px solid #ddd;">${displayHtml}</td></tr>`
     })
     .join('')
   return `<table style="border-collapse:collapse;width:100%;margin:8px 0;">${rows}</table>`

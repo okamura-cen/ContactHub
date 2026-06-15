@@ -193,6 +193,62 @@ export function PropertyPanel({ field, allFields, onChange }: PropertyPanelProps
           </div>
         )}
 
+        {/* 複数追加（繰り返し入力：text/date のみ） */}
+        {(field.type === 'text' || field.type === 'date') && (() => {
+          const opts =
+            field.options && typeof field.options === 'object' && !Array.isArray(field.options)
+              ? (field.options as { repeatable?: boolean; maxItems?: number })
+              : {}
+          const repeatable = opts.repeatable === true
+          const maxItems = typeof opts.maxItems === 'number' ? opts.maxItems : 5
+
+          return (
+            <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="prop-repeatable"
+                  checked={repeatable}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      updateField({ options: { repeatable: true, maxItems } })
+                    } else {
+                      // 繰り返しを無効化（text/date は他に options を使わないため空に戻す）
+                      updateField({ options: undefined })
+                    }
+                  }}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="prop-repeatable" className="text-xs cursor-pointer">
+                  複数追加を許可する
+                </Label>
+              </div>
+              {repeatable && (
+                <div className="space-y-1">
+                  <Label className="text-xs">最大個数（1〜5）</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={maxItems}
+                    onChange={(e) => {
+                      let n = parseInt(e.target.value, 10)
+                      if (Number.isNaN(n)) n = 1
+                      if (n < 1) n = 1
+                      if (n > 5) n = 5
+                      updateField({ options: { repeatable: true, maxItems: n } })
+                    }}
+                    className="text-sm h-9 w-24"
+                  />
+                  <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                    回答者が「＋追加」でこの個数まで入力欄を増やせます。
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {/* 選択肢（select/radio/checkbox） */}
         {hasOptions && (
           <div className="space-y-2">

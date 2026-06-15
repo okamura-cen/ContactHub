@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { BuilderField } from '@/types/builder'
+import { getRepeatableConfig } from '@/lib/repeatable'
 
 /**
  * BuilderFieldの配列からZodスキーマを動的に構築する
@@ -84,6 +85,35 @@ export function buildZodSchema(fields: BuilderField[]) {
         }
         shape[field.id] = schema
         return
+      case 'text':
+      case 'date': {
+        const { repeatable, maxItems } = getRepeatableConfig(field)
+        if (repeatable) {
+          // 各要素のスキーマ（日付は形式チェック、空要素は許容＝送信時に除去される）
+          const elem =
+            field.type === 'date'
+              ? z
+                  .string()
+                  .refine(
+                    (s) => s === '' || /^\d{4}-\d{2}-\d{2}$/.test(s),
+                    '正しい日付を入力してください'
+                  )
+              : z.string()
+          const arr = z.array(elem).max(maxItems, `最大${maxItems}個まで入力できます`).optional()
+          if (field.required) {
+            // 必須時は最低1つの非空入力を要求
+            shape[field.id] = arr.refine(
+              (a) => Array.isArray(a) && a.filter((s) => s.trim() !== '').length >= 1,
+              `${field.label}を入力してください`
+            )
+          } else {
+            shape[field.id] = arr
+          }
+          return
+        }
+        schema = z.string()
+        break
+      }
       case 'heading':
       case 'paragraph':
       case 'divider':

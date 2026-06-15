@@ -22,7 +22,9 @@ function evaluateLogic(logic: FieldLogic | undefined, values: Record<string, unk
   const matched = logic.operator === 'AND' ? results.every(Boolean) : results.some(Boolean)
   return logic.action === 'show' ? matched : !matched
 }
+import { getRepeatableConfig } from '@/lib/repeatable'
 import { TextField } from './fields/TextField'
+import { RepeatableField } from './fields/RepeatableField'
 import { EmailField } from './fields/EmailField'
 import { TelField } from './fields/TelField'
 import { ZipField } from './fields/ZipField'
@@ -66,7 +68,20 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
 
         switch (field.type) {
           case 'text':
-          case 'date':
+          case 'date': {
+            const { repeatable, maxItems } = getRepeatableConfig(field)
+            if (repeatable) {
+              return (
+                <RepeatableField
+                  key={field.id}
+                  {...commonProps}
+                  inputType={field.type}
+                  maxItems={maxItems}
+                  value={Array.isArray(values[field.id]) ? (values[field.id] as string[]) : []}
+                  onChange={(v) => onChange(field.id, v)}
+                />
+              )
+            }
             return (
               <TextField
                 key={field.id}
@@ -75,6 +90,7 @@ export function FormRenderer({ fields, values, errors, onChange, onBlur, formId 
                 onChange={(v) => onChange(field.id, v)}
               />
             )
+          }
           case 'email':
             return (
               <EmailField

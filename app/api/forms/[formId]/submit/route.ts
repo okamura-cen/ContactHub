@@ -13,7 +13,7 @@ export async function POST(
   try {
     const { formId } = await params
     const body = await req.json()
-    const { data, metadata, recaptchaToken } = body
+    const { data: rawData, metadata, recaptchaToken } = body
 
     // フォームを取得
     const form = await prisma.form.findUnique({
@@ -51,6 +51,20 @@ export async function POST(
         }
       } catch {
         // 検証失敗時は通過させる（可用性優先）
+      }
+    }
+
+    // 繰り返し入力（text/date の配列）の空要素を除去してから保存
+    const allFieldsForClean = form.steps.flatMap((s) => s.fields)
+    const data = rawData && typeof rawData === 'object' ? { ...(rawData as Record<string, unknown>) } : rawData
+    if (data && typeof data === 'object') {
+      const d = data as Record<string, unknown>
+      for (const f of allFieldsForClean) {
+        if ((f.type === 'TEXT' || f.type === 'DATE') && Array.isArray(d[f.id])) {
+          d[f.id] = (d[f.id] as unknown[]).filter(
+            (v) => typeof v === 'string' && v.trim() !== ''
+          )
+        }
       }
     }
 

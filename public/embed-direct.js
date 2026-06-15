@@ -83,6 +83,18 @@
     return str.replace(/[０-９]/g, function (s) { return String.fromCharCode(s.charCodeAt(0) - 0xFEE0); });
   }
 
+  // 繰り返し入力設定を読み取る（本体 lib/repeatable.ts の getRepeatableConfig と同等）
+  function getRepeatable(field) {
+    if (field.type !== 'text' && field.type !== 'date') return { repeatable: false, maxItems: 5 };
+    var o = field.options;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return { repeatable: false, maxItems: 5 };
+    var rep = o.repeatable === true;
+    var m = typeof o.maxItems === 'number' ? Math.floor(o.maxItems) : 5;
+    if (m < 1) m = 1;
+    if (m > 5) m = 5;
+    return { repeatable: rep, maxItems: m };
+  }
+
   // 条件分岐ロジックを評価してフィールドを表示すべきか判定
   // （本体側 FormRenderer.tsx の evaluateLogic と同等の挙動）
   function evaluateLogic(logic, values) {
@@ -170,7 +182,12 @@
     switch (field.type) {
       case 'text':
       case 'date':
-        wrapper.appendChild(renderInput(field, 'text', val));
+        var repCfg = getRepeatable(field);
+        if (repCfg.repeatable) {
+          wrapper.appendChild(renderRepeatable(field, field.type, repCfg.maxItems));
+        } else {
+          wrapper.appendChild(renderInput(field, 'text', val));
+        }
         break;
       case 'email':
         wrapper.appendChild(renderInput(field, 'email', val, { inputMode: 'email', autocomplete: 'email' }));
@@ -321,6 +338,62 @@
     };
     if (extra) Object.keys(extra).forEach(function (k) { attrs[k] = extra[k]; });
     return h('input', attrs);
+  }
+
+  // 繰り返し入力（text/date を複数追加できる）。本体 RepeatableField.tsx と挙動を揃える。
+  function renderRepeatable(field, inputType, maxItems) {
+    var group = h('div', { className: 'efo-repeatable' });
+    // 値を配列に正規化（最低1要素）
+    var existing = state.values[field.id];
+    if (!Array.isArray(existing)) {
+      existing = (existing != null && existing !== '') ? [String(existing)] : [''];
+    }
+    if (existing.length === 0) existing.push('');
+    state.values[field.id] = existing;
+    var vals = existing;
+
+    function rerender() {
+      while (group.firstChild) group.removeChild(group.firstChild);
+      vals.forEach(function (v, i) {
+        var row = h('div', { className: 'efo-repeatable-row' });
+        var input = h('input', {
+          className: 'efo-input',
+          id: i === 0 ? 'efo-' + field.id : 'efo-' + field.id + '-' + i,
+          type: inputType === 'date' ? 'date' : 'text',
+          placeholder: field.placeholder || '',
+          value: v || '',
+          onInput: function (e) { vals[i] = e.target.value; clearError(field.id); },
+          onBlur: function () { validateField(field); },
+        });
+        row.appendChild(input);
+        if (vals.length > 1) {
+          row.appendChild(h('button', {
+            type: 'button',
+            className: 'efo-repeatable-remove',
+            'aria-label': 'この項目を削除',
+            onClick: function () {
+              vals.splice(i, 1);
+              if (vals.length === 0) vals.push('');
+              clearError(field.id);
+              rerender();
+            },
+          }, '－'));
+        }
+        group.appendChild(row);
+      });
+      if (vals.length < maxItems) {
+        group.appendChild(h('button', {
+          type: 'button',
+          className: 'efo-repeatable-add',
+          onClick: function () {
+            if (vals.length < maxItems) { vals.push(''); rerender(); }
+          },
+        }, '＋追加'));
+      }
+    }
+
+    rerender();
+    return group;
   }
 
   function renderZipField(field) {
@@ -620,8 +693,19 @@
         if (!val) return setError(field.id, '同意が必要です');
       } else if (field.type === 'file') {
         if (!val || !val.url) return setError(field.id, field.label + 'を添付してください');
+      } else if ((field.type === 'text' || field.type === 'date') && Array.isArray(val)) {
+        // 繰り返し入力：最低1つの非空入力が必須
+        var nonEmpty = val.filter(function (s) { return typeof s === 'string' && s.trim() !== ''; });
+        if (nonEmpty.length < 1) return setError(field.id, field.label + 'を入力してください');
       } else if (!val || (typeof val === 'string' && !val.trim())) {
         return setError(field.id, field.label + 'を入力してください');
+      }
+    }
+    // 繰り返し入力の上限チェック（必須・任意問わず）
+    if ((field.type === 'text' || field.type === 'date') && Array.isArray(val)) {
+      var rc = getRepeatable(field);
+      if (rc.repeatable && val.length > rc.maxItems) {
+        return setError(field.id, '最大' + rc.maxItems + '個まで入力できます');
       }
     }
     if (val && field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
@@ -745,7 +829,13 @@
     Object.keys(state.values).forEach(function (k) { submitData[k] = state.values[k]; });
     state.definition.steps.forEach(function (s) {
       s.fields.forEach(function (f) {
-        if (!isFieldVisible(f)) delete submitData[f.id];
+        if (!isFieldVisible(f)) { delete submitData[f.id]; return; }
+        // 繰り返し入力（text/date 配列）の空要素を除去
+        if ((f.type === 'text' || f.type === 'date') && Array.isArray(submitData[f.id])) {
+          submitData[f.id] = submitData[f.id].filter(function (v) {
+            return typeof v === 'string' && v.trim() !== '';
+          });
+        }
       });
     });
 
@@ -790,6 +880,14 @@
       '.efo-input, .efo-textarea, .efo-select { width: 100%; padding: 0.5rem 0.75rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; outline: none; box-sizing: border-box; transition: border-color 0.15s; }',
       '.efo-input:focus, .efo-textarea:focus, .efo-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }',
       '.efo-input--error { border-color: #e53e3e !important; }',
+      /* 繰り返し入力（複数追加できる項目） */
+      '.efo-repeatable { display: flex; flex-direction: column; gap: 0.5rem; }',
+      '.efo-repeatable-row { display: flex; gap: 0.5rem; align-items: center; }',
+      '.efo-repeatable-row .efo-input { flex: 1; }',
+      '.efo-repeatable-remove { flex: none; width: 2.5rem; height: 2.5rem; border: 1px solid #d1d5db; background: white; color: #e53e3e; border-radius: 0.375rem; cursor: pointer; font-size: 1rem; line-height: 1; }',
+      '.efo-repeatable-remove:hover { background: #fef2f2; }',
+      '.efo-repeatable-add { align-self: flex-start; background: none; border: none; color: #3b82f6; font-size: 0.875rem; cursor: pointer; padding: 0.25rem 0; }',
+      '.efo-repeatable-add:hover { text-decoration: underline; }',
       '.efo-input--zip { max-width: 10rem; }',
       '.efo-error { font-size: 0.75rem; color: #e53e3e; margin-top: 0.25rem; display: none; }',
       '.efo-help { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }',

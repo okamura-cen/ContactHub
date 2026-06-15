@@ -42,6 +42,7 @@ export interface BuilderField {
   required: boolean
   /** select/radio/checkbox: 選択肢一覧
    *  paragraph: { style: 'plain'|'notice'|'emphasis', linkText?: string }
+   *  text/date: { repeatable?: boolean; maxItems?: number }（繰り返し入力設定）
    *  フィールドタイプによって意味が変わるため Record で柔軟に。 */
   options?: string[] | Record<string, unknown>
   efoSettings?: EfoSettings

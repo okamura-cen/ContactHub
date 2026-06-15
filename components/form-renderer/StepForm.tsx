@@ -280,7 +280,8 @@ export function StepForm({ steps, formId, settings, isPreview }: StepFormProps) 
                 : `${(f.size / (1024 * 1024)).toFixed(1)} MB`
               displayVal = `${f.name}（${size}）`
             } else if (Array.isArray(val)) {
-              displayVal = val.join(', ')
+              // 繰り返し入力／チェックボックス：空要素を除いて区切り表示
+              displayVal = val.filter((v) => String(v).trim() !== '').join('、')
             } else if (typeof val === 'boolean') {
               displayVal = val ? '同意する' : '同意しない'
             } else {
