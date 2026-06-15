@@ -64,7 +64,7 @@ function ColorRow({ label, value, fallback, onChange, onClear }: {
   onClear: () => void
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
       <Label className="text-sm w-28 shrink-0">{label}</Label>
       <input
         type="color"
@@ -93,7 +93,7 @@ function NumberRow({ label, value, onChange, placeholder, min, max, note }: {
   note?: string
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
       <Label className="text-sm w-28 shrink-0">{label}</Label>
       <Input
         type="number"
@@ -102,7 +102,7 @@ function NumberRow({ label, value, onChange, placeholder, min, max, note }: {
         value={value ?? ''}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-        className="h-8 w-24"
+        className="h-8 w-24 shrink-0"
       />
       {note && <span className="text-[11px] text-[hsl(var(--muted-foreground))]">{note}</span>}
     </div>
@@ -183,7 +183,7 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
         ))}
       </div>
 
-      <div className="mt-2 space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="mt-2 space-y-4 max-h-[70vh] overflow-y-auto overflow-x-hidden pr-1">
         {/* === 基本 === */}
         {tab === 'general' && (<>
           <div className="space-y-1">
@@ -329,12 +329,12 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
               onChange={(v) => setLocal({ ...local, primaryColor: v })}
               onClear={() => setLocal({ ...local, primaryColor: undefined })}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Label className="text-sm w-28 shrink-0">フォント</Label>
               <select
                 value={local.fontFamily || ''}
                 onChange={(e) => setLocal({ ...local, fontFamily: e.target.value })}
-                className="flex-1 h-9 px-3 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))]"
+                className="flex-1 min-w-0 h-9 px-3 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))]"
               >
                 {FONT_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
