@@ -270,8 +270,115 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <Label className="text-sm">カスタムCSS</Label>
+          {/* 簡易デザイン調整（iframe/JS自動調整版・HTMLダイレクト版の両方に反映） */}
+          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+            <div>
+              <p className="text-sm font-medium">かんたんデザイン調整</p>
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                iframe・JS自動調整版・HTMLダイレクト版すべてに反映されます（空欄なら既定値）
+              </p>
+            </div>
+
+            {/* フォーム最大幅 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">最大幅(px)</Label>
+              <Input
+                type="number"
+                min={280}
+                max={1200}
+                value={local.formMaxWidth ?? ''}
+                onChange={(e) =>
+                  setLocal({ ...local, formMaxWidth: e.target.value === '' ? undefined : Number(e.target.value) })
+                }
+                placeholder="576"
+                className="h-8 w-28"
+              />
+            </div>
+
+            {/* 角丸 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">角丸(px)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={40}
+                value={local.borderRadius ?? ''}
+                onChange={(e) =>
+                  setLocal({ ...local, borderRadius: e.target.value === '' ? undefined : Number(e.target.value) })
+                }
+                placeholder="6"
+                className="h-8 w-28"
+              />
+              <span className="text-[11px] text-[hsl(var(--muted-foreground))]">入力欄・ボタン</span>
+            </div>
+
+            {/* 項目間の余白 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">項目間の余白(px)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={80}
+                value={local.fieldGap ?? ''}
+                onChange={(e) =>
+                  setLocal({ ...local, fieldGap: e.target.value === '' ? undefined : Number(e.target.value) })
+                }
+                placeholder="24"
+                className="h-8 w-28"
+              />
+            </div>
+
+            {/* 入力欄の枠線色 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">入力欄の枠線色</Label>
+              <input
+                type="color"
+                value={local.inputBorderColor || '#d1d5db'}
+                onChange={(e) => setLocal({ ...local, inputBorderColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
+              />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.inputBorderColor || '#d1d5db'}</span>
+              {local.inputBorderColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, inputBorderColor: undefined })}>リセット</button>
+              )}
+            </div>
+
+            {/* ラベル文字色 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">ラベル文字色</Label>
+              <input
+                type="color"
+                value={local.labelColor || '#111827'}
+                onChange={(e) => setLocal({ ...local, labelColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
+              />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.labelColor || '#111827'}</span>
+              {local.labelColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, labelColor: undefined })}>リセット</button>
+              )}
+            </div>
+
+            {/* フォーム背景色 */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">フォーム背景色</Label>
+              <input
+                type="color"
+                value={local.formBgColor || '#ffffff'}
+                onChange={(e) => setLocal({ ...local, formBgColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
+              />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.formBgColor || '#ffffff'}</span>
+              {local.formBgColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, formBgColor: undefined })}>リセット</button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1 pt-2 border-t border-[hsl(var(--border))]">
+            <Label className="text-sm">カスタムCSS（上級者向け）</Label>
             <Textarea
               value={local.customCss || ''}
               onChange={(e) => setLocal({ ...local, customCss: e.target.value })}
@@ -279,7 +386,7 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
               placeholder={`.efo-form {\n  border-radius: 12px;\n}\n.efo-form button {\n  border-radius: 4px;\n}`}
               className="font-mono text-xs"
             />
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">.efo-form をルートセレクタとして使用できます</p>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">.efo-form をルートセレクタとして使用できます（iframe/JS版）</p>
           </div>
         </div>
         </>) : (<>

@@ -71,6 +71,13 @@ export interface FormSettings {
   primaryColor?: string
   fontFamily?: string
   customCss?: string
+  // 簡易デザイン調整（iframe/JS自動調整版・HTMLダイレクト版の両方に反映）
+  formMaxWidth?: number      // フォーム最大幅(px)
+  borderRadius?: number      // 入力欄・ボタンの角丸(px)
+  inputBorderColor?: string  // 入力欄の枠線色(hex)
+  labelColor?: string        // ラベル文字色(hex)
+  fieldGap?: number          // 項目間の余白(px)
+  formBgColor?: string       // フォーム背景色(hex)
   recaptchaEnabled?: boolean
   // ランディングページ設定
   lpEnabled?: boolean

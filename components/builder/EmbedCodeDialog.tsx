@@ -47,9 +47,9 @@ export function EmbedCodeDialog({ open, onOpenChange, formId }: EmbedCodeDialogP
   const code = codes[tab]
 
   const descriptions = {
-    iframe: 'シンプルな埋め込み。スタイルは固定。',
-    js: 'iframe を自動生成し、高さを自動調整。',
-    direct: 'フォームHTMLを直接展開。CSSクラス付きでカスタマイズ自由。',
+    iframe: '設置先サイトのCSSと干渉せず崩れにくい。デザインは「フォーム設定 → デザイン設定」で調整できます。',
+    js: 'iframe を自動生成し高さも自動調整。崩れにくい。デザインは「フォーム設定 → デザイン設定」で調整できます。',
+    direct: 'フォームHTMLを直接展開。CSSクラスで細かくカスタマイズ可能（設置先CSSと干渉する場合あり）。',
   }
 
   const copyToClipboard = () => {
@@ -92,9 +92,18 @@ export function EmbedCodeDialog({ open, onOpenChange, formId }: EmbedCodeDialogP
         <Button onClick={copyToClipboard} className="mt-3 w-full" variant="outline">
           コピー
         </Button>
+        {(tab === 'iframe' || tab === 'js') && (
+          <div className="mt-3 p-3 bg-blue-50 rounded-md">
+            <p className="text-xs text-blue-800">
+              この方式は <span className="font-medium">iframe</span> でフォームを表示するため、設置先サイトのCSSと干渉せず崩れません。
+              色・フォント・角丸・最大幅・枠線色・背景などは
+              <span className="font-medium">「フォーム設定 → デザイン設定」</span>で調整でき、この埋め込みにもそのまま反映されます。
+            </p>
+          </div>
+        )}
         {tab === 'direct' && (
           <div className="mt-3 p-3 bg-emerald-50 rounded-md">
-            <p className="text-xs font-medium text-emerald-800 mb-1">CSSカスタマイズ可能なクラス一覧:</p>
+            <p className="text-xs font-medium text-emerald-800 mb-1">CSSカスタマイズ可能なクラス一覧（HTMLダイレクト版）:</p>
             <div className="text-[10px] text-emerald-700 space-y-0.5 font-mono">
               <p>.efo-form-container - フォーム全体</p>
               <p>.efo-field - 各フィールド</p>

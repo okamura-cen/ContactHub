@@ -3,28 +3,7 @@
 import React from 'react'
 import { BuilderStep } from '@/types/builder'
 import { StepForm } from '@/components/form-renderer/StepForm'
-
-/** HEXカラーをHSL空間値（"H S% L%"形式）に変換 */
-function hexToHslValues(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!result) return hex
-  let r = parseInt(result[1], 16) / 255
-  let g = parseInt(result[2], 16) / 255
-  let b = parseInt(result[3], 16) / 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  let h = 0, s = 0
-  const l = (max + min) / 2
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-      case g: h = ((b - r) / d + 2) / 6; break
-      case b: h = ((r - g) / d + 4) / 6; break
-    }
-  }
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-}
+import { hexToHslValues, buildPublicFormThemeCss } from '@/lib/form-theme'
 
 interface LpSettings {
   lpEnabled?: boolean
@@ -52,6 +31,13 @@ interface PublicFormClientProps {
     fontFamily?: string
     customCss?: string
     recaptchaEnabled?: boolean
+    // 簡易デザイン調整
+    formMaxWidth?: number
+    borderRadius?: number
+    inputBorderColor?: string
+    labelColor?: string
+    fieldGap?: number
+    formBgColor?: string
   } & LpSettings
 }
 
@@ -64,7 +50,10 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
   // テーマカラーをCSS変数に注入
   const styleVars = primaryColor ? `:root { --form-primary: ${primaryColor}; }` : ''
   const fontStyle = fontFamily ? `.efo-form { font-family: ${fontFamily}; }` : ''
-  const injectedStyle = [styleVars, fontStyle, customCss].filter(Boolean).join('\n')
+  // 簡易デザイン調整CSS（最大幅・角丸・枠線色・ラベル色・余白・背景）
+  const themeCss = buildPublicFormThemeCss(settings)
+  // customCss はユーザー任意指定なので最後に置き、上書きできるようにする
+  const injectedStyle = [styleVars, fontStyle, themeCss, customCss].filter(Boolean).join('\n')
 
   const pageStyle: React.CSSProperties = {
     ...(lp?.lpBgColor && { backgroundColor: lp.lpBgColor }),
@@ -115,7 +104,7 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
         )}
 
         <div
-          className="max-w-xl mx-auto bg-[hsl(var(--background))] rounded-lg shadow-sm border border-[hsl(var(--border))] p-6 md:p-8"
+          className="efo-card max-w-xl mx-auto bg-[hsl(var(--background))] rounded-lg shadow-sm border border-[hsl(var(--border))] p-6 md:p-8"
           style={primaryColor ? { '--primary': hexToHslValues(primaryColor) } as React.CSSProperties : undefined}
         >
           <StepForm formId={formId} steps={steps} settings={settings} isPreview={isPreview} />

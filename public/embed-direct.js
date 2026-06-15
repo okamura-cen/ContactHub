@@ -953,6 +953,56 @@
     document.head.appendChild(style);
   }
 
+  // 簡易デザイン調整＆テーマカラーを設定値から反映する。
+  // 本体（/f/[formId]）の lib/form-theme.ts と同じ調整項目を、embed の .efo-* クラスに適用。
+  function injectCustomStyles(settings) {
+    if (!settings) return;
+    var id = 'efo-custom-styles-' + formId;
+    var existing = document.getElementById(id);
+    if (existing) existing.parentNode.removeChild(existing);
+
+    var rules = [];
+    var c = settings.primaryColor;
+    if (c) {
+      // テーマカラー（HTMLダイレクト版は従来 #3b82f6 固定だったため設定値で上書き）
+      rules.push('.efo-btn--next{background:' + c + ';}');
+      rules.push('.efo-input:focus,.efo-textarea:focus,.efo-select:focus{border-color:' + c + ';box-shadow:0 0 0 2px ' + c + '33;}');
+      rules.push('.efo-progress-fill{background:' + c + ';}');
+      rules.push('.efo-agree-link,.efo-paragraph-link a,.efo-repeatable-add{color:' + c + ';}');
+    }
+    if (settings.fontFamily) {
+      rules.push('.efo-form-container{font-family:' + settings.fontFamily + ';}');
+    }
+    if (settings.formMaxWidth) {
+      rules.push('.efo-form-container{max-width:' + settings.formMaxWidth + 'px;}');
+    }
+    if (settings.formBgColor) {
+      // 背景色を付けたときだけ内側に余白・角丸を添える
+      rules.push('.efo-form-container{background:' + settings.formBgColor + ';padding:1.25rem;border-radius:' + (settings.borderRadius != null ? settings.borderRadius + 'px' : '0.5rem') + ';}');
+    }
+    if (settings.borderRadius != null) {
+      rules.push('.efo-input,.efo-textarea,.efo-select,.efo-btn{border-radius:' + settings.borderRadius + 'px;}');
+    }
+    if (settings.inputBorderColor) {
+      // エラー時は .efo-input--error が !important で赤枠を保持
+      rules.push('.efo-input,.efo-textarea,.efo-select{border-color:' + settings.inputBorderColor + ';}');
+    }
+    if (settings.labelColor) {
+      rules.push('.efo-label{color:' + settings.labelColor + ';}');
+    }
+    if (settings.fieldGap != null) {
+      rules.push('.efo-fields{gap:' + settings.fieldGap + 'px;}');
+    }
+    // 管理画面のカスタムCSS（.efo-form をルートに記述されることがあるため両対応で適用）
+    if (settings.customCss) rules.push(settings.customCss);
+
+    if (rules.length === 0) return;
+    var style = document.createElement('style');
+    style.id = id;
+    style.textContent = rules.join('\n');
+    document.head.appendChild(style);
+  }
+
   // 初期化
   injectDefaultStyles();
   container.textContent = '読み込み中...';
@@ -961,6 +1011,7 @@
     .then(function (r) { return r.json(); })
     .then(function (def) {
       state.definition = def;
+      injectCustomStyles(def.settings);
       render();
       // 閲覧イベント（フォーム定義の取得に成功したタイミングで送信）
       sendEvent('VIEW');

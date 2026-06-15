@@ -67,6 +67,13 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         primaryColor: (settings?.primaryColor as string) || undefined,
         fontFamily: (settings?.fontFamily as string) || undefined,
         customCss: (settings?.customCss as string) || undefined,
+        // 簡易デザイン調整
+        formMaxWidth: (settings?.formMaxWidth as number) || undefined,
+        borderRadius: settings?.borderRadius as number | undefined,
+        inputBorderColor: (settings?.inputBorderColor as string) || undefined,
+        labelColor: (settings?.labelColor as string) || undefined,
+        fieldGap: settings?.fieldGap as number | undefined,
+        formBgColor: (settings?.formBgColor as string) || undefined,
         recaptchaEnabled: (settings?.recaptchaEnabled as boolean) || false,
         lpEnabled: (settings?.lpEnabled as boolean) || false,
         lpLogoUrl: (settings?.lpLogoUrl as string) || undefined,

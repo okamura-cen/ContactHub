@@ -51,7 +51,7 @@ interface FormRendererProps {
 /** フォームフィールドの動的レンダラー */
 export function FormRenderer({ fields, values, errors, onChange, onBlur, formId = '', onAddressFound }: FormRendererProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 efo-fields">
       {fields.map((field) => {
         // 条件分岐評価
         if (!evaluateLogic(field.logic, values)) return null

@@ -100,6 +100,13 @@ function FormBuilderContent() {
           primaryColor: s.primaryColor as string || undefined,
           fontFamily: s.fontFamily as string || undefined,
           customCss: s.customCss as string || undefined,
+          // 簡易デザイン調整
+          formMaxWidth: s.formMaxWidth as number | undefined,
+          borderRadius: s.borderRadius as number | undefined,
+          inputBorderColor: s.inputBorderColor as string || undefined,
+          labelColor: s.labelColor as string || undefined,
+          fieldGap: s.fieldGap as number | undefined,
+          formBgColor: s.formBgColor as string || undefined,
           recaptchaEnabled: s.recaptchaEnabled as boolean || false,
           lpEnabled: s.lpEnabled as boolean || false,
           lpLogoUrl: s.lpLogoUrl as string || undefined,
