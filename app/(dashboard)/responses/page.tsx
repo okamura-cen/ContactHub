@@ -7,6 +7,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/toast'
+import { ExportMenu } from '@/components/ExportMenu'
+import { downloadTable, ExportFormat } from '@/lib/export-table'
 import { formatFieldValue } from '@/lib/email-template'
 
 const STATUS_CONFIG = {
@@ -61,6 +63,7 @@ function ResponsesContent() {
   const [filterFormId, setFilterFormId] = useState(searchParams.get('formId') || '')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterUnread, setFilterUnread] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -151,6 +154,50 @@ function ResponsesContent() {
   const unreadCount = responses.filter((r) => !r.isRead).length
   const pendingCount = responses.filter((r) => r.responseStatus === 'PENDING').length
 
+  // 横断ダウンロード：複数フォームが混在するため、共通列＋全フォームの項目（ラベルの和集合）で出力
+  const handleExport = useCallback(async (format: ExportFormat) => {
+    if (filtered.length === 0) return
+    // 各回答を「ラベル→表示値」に整形しつつ、ラベルの出現順（和集合）を収集
+    const labelOrder: string[] = []
+    const seen = new Set<string>()
+    const formatCell = (type: string, val: unknown): string =>
+      formatFieldValue({ type: type as Parameters<typeof formatFieldValue>[0]['type'] }, val)
+        .replace(/\r?\n/g, ' / ')
+
+    const perRow = filtered.map((r) => {
+      const byLabel: Record<string, string> = {}
+      r.form.steps?.forEach((s) => {
+        s.fields?.forEach((f) => {
+          if (['HEADING', 'PARAGRAPH', 'DIVIDER'].includes(f.type)) return
+          if (!seen.has(f.label)) { seen.add(f.label); labelOrder.push(f.label) }
+          byLabel[f.label] = formatCell(f.type, r.data[f.id])
+        })
+      })
+      return {
+        フォーム: r.form.title,
+        送信日時: new Date(r.createdAt).toLocaleString('ja-JP'),
+        対応状況: STATUS_CONFIG[r.responseStatus]?.label ?? '',
+        メモ: r.memo ?? '',
+        byLabel,
+      }
+    })
+
+    const headers = ['フォーム', '送信日時', '対応状況', 'メモ', ...labelOrder]
+    const rows = perRow.map((p) => [
+      p.フォーム, p.送信日時, p.対応状況, p.メモ,
+      ...labelOrder.map((l) => p.byLabel[l] ?? ''),
+    ])
+
+    setExporting(true)
+    try {
+      await downloadTable(format, 'responses', headers, rows)
+    } catch {
+      toast({ title: 'ダウンロードに失敗しました', variant: 'destructive' })
+    } finally {
+      setExporting(false)
+    }
+  }, [filtered, toast])
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -162,6 +209,11 @@ function ResponsesContent() {
             {pendingCount > 0 && <span className="ml-2 text-orange-500 font-medium">未対応 {pendingCount}件</span>}
           </p>
         </div>
+        <ExportMenu
+          disabled={filtered.length === 0}
+          exporting={exporting}
+          onExport={handleExport}
+        />
       </div>
 
       {/* フィルター */}
