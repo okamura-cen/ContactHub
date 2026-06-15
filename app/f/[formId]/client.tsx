@@ -38,6 +38,7 @@ interface PublicFormClientProps {
     labelColor?: string
     fieldGap?: number
     formBgColor?: string
+    pageBgColor?: string
   } & LpSettings
 }
 
@@ -55,8 +56,10 @@ export function PublicFormClient({ formId, title, steps, isPreview, settings }: 
   // customCss はユーザー任意指定なので最後に置き、上書きできるようにする
   const injectedStyle = [styleVars, fontStyle, themeCss, customCss].filter(Boolean).join('\n')
 
+  // ページ背景色（カードの外側）: LP有効時は LP背景色を優先、それ以外は pageBgColor
+  const outerBgColor = lp?.lpBgColor || settings.pageBgColor
   const pageStyle: React.CSSProperties = {
-    ...(lp?.lpBgColor && { backgroundColor: lp.lpBgColor }),
+    ...(outerBgColor && { backgroundColor: outerBgColor }),
     ...(lp?.lpTextColor && { color: lp.lpTextColor }),
     ...(fontFamily && { fontFamily }),
   }

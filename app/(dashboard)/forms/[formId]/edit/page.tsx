@@ -107,6 +107,7 @@ function FormBuilderContent() {
           labelColor: s.labelColor as string || undefined,
           fieldGap: s.fieldGap as number | undefined,
           formBgColor: s.formBgColor as string || undefined,
+          pageBgColor: s.pageBgColor as string || undefined,
           recaptchaEnabled: s.recaptchaEnabled as boolean || false,
           lpEnabled: s.lpEnabled as boolean || false,
           lpLogoUrl: s.lpLogoUrl as string || undefined,

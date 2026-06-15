@@ -375,6 +375,25 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
                   onClick={() => setLocal({ ...local, formBgColor: undefined })}>リセット</button>
               )}
             </div>
+
+            {/* ページ背景色（カードの外側／iframe・JS版のみ反映） */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">ページ背景色</Label>
+              <input
+                type="color"
+                value={local.pageBgColor || '#f1f5f9'}
+                onChange={(e) => setLocal({ ...local, pageBgColor: e.target.value })}
+                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
+              />
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.pageBgColor || '#f1f5f9'}</span>
+              {local.pageBgColor && (
+                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
+                  onClick={() => setLocal({ ...local, pageBgColor: undefined })}>リセット</button>
+              )}
+            </div>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+              ※ ページ背景色はフォームの外側（余白）の色です。iframe／JS自動調整版のみ反映されます。
+            </p>
           </div>
 
           <div className="space-y-1 pt-2 border-t border-[hsl(var(--border))]">

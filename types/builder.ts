@@ -77,7 +77,8 @@ export interface FormSettings {
   inputBorderColor?: string  // 入力欄の枠線色(hex)
   labelColor?: string        // ラベル文字色(hex)
   fieldGap?: number          // 項目間の余白(px)
-  formBgColor?: string       // フォーム背景色(hex)
+  formBgColor?: string       // フォーム（カード）背景色(hex)
+  pageBgColor?: string       // ページ背景色＝カードの外側(hex)。iframe/JS版のみ反映
   recaptchaEnabled?: boolean
   // ランディングページ設定
   lpEnabled?: boolean

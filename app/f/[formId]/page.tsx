@@ -74,6 +74,7 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         labelColor: (settings?.labelColor as string) || undefined,
         fieldGap: settings?.fieldGap as number | undefined,
         formBgColor: (settings?.formBgColor as string) || undefined,
+        pageBgColor: (settings?.pageBgColor as string) || undefined,
         recaptchaEnabled: (settings?.recaptchaEnabled as boolean) || false,
         lpEnabled: (settings?.lpEnabled as boolean) || false,
         lpLogoUrl: (settings?.lpLogoUrl as string) || undefined,
