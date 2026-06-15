@@ -22,11 +22,12 @@ export function RadioField({ id, label, helpText, required, options, error, valu
         {label}
         {required && <span className="text-[hsl(var(--destructive))] ml-1">*</span>}
       </Label>
-      <div className="space-y-2">
+      {/* 既定は横並び（入りきらなければ折り返し）。狭い画面では縦に並ぶ */}
+      <div className="flex flex-wrap items-start gap-x-5 gap-y-1 max-[480px]:flex-col">
         {options.map((opt) => (
           <label
             key={opt}
-            className="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-[hsl(var(--accent))] min-h-[44px]"
+            className="flex items-center gap-2 cursor-pointer p-2 rounded-md hover:bg-[hsl(var(--accent))] min-h-[44px] whitespace-nowrap"
           >
             <input
               type="radio"
