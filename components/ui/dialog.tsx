@@ -2,13 +2,26 @@
 
 import { useEffect, useRef, ReactNode } from 'react'
 
+/** モーダル幅のプリセット */
+type DialogSize = 'default' | 'lg' | 'xl' | '2xl' | '3xl'
+
+const SIZE_CLASS: Record<DialogSize, string> = {
+  default: 'max-w-lg',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+}
+
 interface DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   children: ReactNode
+  /** モーダル幅（未指定は従来どおり max-w-lg） */
+  size?: DialogSize
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({ open, onOpenChange, children, size = 'default' }: DialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -22,12 +35,12 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 w-full max-w-lg rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg">
+      <div className={`relative z-50 w-full ${SIZE_CLASS[size]} rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6 shadow-lg`}>
         {children}
       </div>
     </div>

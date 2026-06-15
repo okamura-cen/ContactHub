@@ -55,12 +55,75 @@ function ImageUrlInput({ value, onChange, label, placeholder }: {
   )
 }
 
+/** 色選択の1行（ラベル＋カラーピッカー＋現在値＋リセット） */
+function ColorRow({ label, value, fallback, onChange, onClear }: {
+  label: string
+  value?: string
+  fallback: string
+  onChange: (v: string) => void
+  onClear: () => void
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm w-28 shrink-0">{label}</Label>
+      <input
+        type="color"
+        value={value || fallback}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 w-12 rounded cursor-pointer border border-[hsl(var(--border))] shrink-0"
+      />
+      <span className="text-xs text-[hsl(var(--muted-foreground))] tabular-nums">{value || fallback}</span>
+      {value && (
+        <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline" onClick={onClear}>
+          リセット
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** 数値入力の1行（ラベル＋数値＋補足） */
+function NumberRow({ label, value, onChange, placeholder, min, max, note }: {
+  label: string
+  value?: number
+  onChange: (v: number | undefined) => void
+  placeholder?: string
+  min?: number
+  max?: number
+  note?: string
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm w-28 shrink-0">{label}</Label>
+      <Input
+        type="number"
+        min={min}
+        max={max}
+        value={value ?? ''}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+        className="h-8 w-24"
+      />
+      {note && <span className="text-[11px] text-[hsl(var(--muted-foreground))]">{note}</span>}
+    </div>
+  )
+}
+
 const FONT_OPTIONS = [
   { value: '', label: 'デフォルト（システムフォント）' },
   { value: '"Noto Sans JP", sans-serif', label: 'Noto Sans JP' },
   { value: '"Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif', label: 'ヒラギノ角ゴ' },
   { value: '"Yu Gothic", "游ゴシック", sans-serif', label: '游ゴシック' },
   { value: '"M PLUS Rounded 1c", sans-serif', label: 'M PLUS Rounded 1c' },
+]
+
+type SettingsTab = 'general' | 'notify' | 'design' | 'lp'
+
+const TABS: { key: SettingsTab; label: string }[] = [
+  { key: 'general', label: '基本' },
+  { key: 'notify', label: '通知メール' },
+  { key: 'design', label: 'デザイン' },
+  { key: 'lp', label: 'ランディングページ' },
 ]
 
 interface FormSettingsDialogProps {
@@ -77,7 +140,7 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
   // プレースホルダーとして表示するフィールド（見出し・区切り線・段落は除く）
   const placeholderFields = fields.filter((f) => !['heading', 'divider', 'paragraph'].includes(f.type))
   const [local, setLocal] = useState<FormSettings>(settings)
-  const [tab, setTab] = useState<'general' | 'lp'>('general')
+  const [tab, setTab] = useState<SettingsTab>('general')
 
   useEffect(() => {
     setLocal(settings)
@@ -101,177 +164,187 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} size="2xl">
       <DialogHeader>
         <DialogTitle>フォーム設定</DialogTitle>
       </DialogHeader>
+
       {/* タブ切り替え */}
-      <div className="flex gap-2 mt-3 mb-1">
-        <Button size="sm" variant={tab === 'general' ? 'default' : 'outline'} onClick={() => setTab('general')}>基本設定</Button>
-        <Button size="sm" variant={tab === 'lp' ? 'default' : 'outline'} onClick={() => setTab('lp')}>ランディングページ</Button>
+      <div className="flex flex-wrap gap-2 mt-3 mb-1 border-b border-[hsl(var(--border))] pb-3">
+        {TABS.map((t) => (
+          <Button
+            key={t.key}
+            size="sm"
+            variant={tab === t.key ? 'default' : 'outline'}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </Button>
+        ))}
       </div>
-      <div className="mt-2 space-y-4 max-h-[60vh] overflow-y-auto">
-        {tab === 'general' ? (<>
-        <div className="space-y-1">
-          <Label className="text-sm">完了メッセージ</Label>
-          <Textarea
-            value={local.successMessage}
-            onChange={(e) => setLocal({ ...local, successMessage: e.target.value })}
-            rows={2}
-            placeholder="送信が完了しました。ありがとうございます。"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-sm">リダイレクトURL</Label>
-          <Input
-            value={local.redirectUrl || ''}
-            onChange={(e) => setLocal({ ...local, redirectUrl: e.target.value })}
-            placeholder="https://example.com/thanks"
-          />
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">送信完了後に別ページへ遷移させる場合</p>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-sm">通知メールアドレス</Label>
-          <Input
-            value={(local.notifyEmails || []).join(', ')}
-            onChange={(e) =>
-              setLocal({
-                ...local,
-                notifyEmails: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-              })
-            }
-            placeholder="admin@example.com, staff@example.com"
-          />
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">カンマ区切りで複数指定可</p>
-        </div>
-        <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="auto-reply"
-              checked={local.autoReply}
-              onChange={(e) => setLocal({ ...local, autoReply: e.target.checked })}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="auto-reply" className="text-sm cursor-pointer">
-              自動返信メールを送信する
-            </Label>
-          </div>
-          {local.autoReply && (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label className="text-sm">自動返信メッセージ</Label>
-                <Textarea
-                  value={local.autoReplyMessage || ''}
-                  onChange={(e) => setLocal({ ...local, autoReplyMessage: e.target.value })}
-                  rows={6}
-                  placeholder={'{{お名前}} 様\nこのたびはお問い合わせいただきありがとうございます。\n以下の内容で承りました。\n\n{{全回答}}'}
-                />
-                <div className="text-xs text-[hsl(var(--muted-foreground))] space-y-1 pt-1">
-                  <p>本文に以下のプレースホルダーを書くと、回答内容を差し込めます:</p>
-                  <p>
-                    <code className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">{'{{全回答}}'}</code>
-                    {' '}— すべての回答を表形式で挿入
-                  </p>
-                  {placeholderFields.length > 0 && (
-                    <p className="flex flex-wrap gap-1 items-baseline">
-                      <span>個別のフィールド:</span>
-                      {placeholderFields.map((f) => (
-                        <code key={f.id} className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">
-                          {`{{${f.label}}}`}
-                        </code>
-                      ))}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-sm">送信元表示名</Label>
-                <Input
-                  value={local.autoReplyFromName || ''}
-                  onChange={(e) => setLocal({ ...local, autoReplyFromName: e.target.value })}
-                  placeholder="株式会社サンプル"
-                />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者の差出人名として表示されます（例: 株式会社サンプル）</p>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-sm">返信先アドレス（Reply-To）</Label>
-                <Input
-                  type="email"
-                  value={local.autoReplyReplyTo || ''}
-                  onChange={(e) => setLocal({ ...local, autoReplyReplyTo: e.target.value })}
-                  placeholder="support@example.com"
-                />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者が返信した際の宛先（任意）</p>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-sm">件名</Label>
-                <Input
-                  value={local.autoReplySubject || ''}
-                  onChange={(e) => setLocal({ ...local, autoReplySubject: e.target.value })}
-                  placeholder="【サンプル】お問い合わせありがとうございます"
-                />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">未設定時は「【フォームタイトル】お問い合わせありがとうございます」が使われます</p>
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* スパム対策 */}
-        <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
-          <p className="text-sm font-medium">スパム対策</p>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="recaptcha-enabled"
-              checked={local.recaptchaEnabled ?? false}
-              onChange={(e) => setLocal({ ...local, recaptchaEnabled: e.target.checked })}
-              className="h-4 w-4"
+      <div className="mt-2 space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        {/* === 基本 === */}
+        {tab === 'general' && (<>
+          <div className="space-y-1">
+            <Label className="text-sm">完了メッセージ</Label>
+            <Textarea
+              value={local.successMessage}
+              onChange={(e) => setLocal({ ...local, successMessage: e.target.value })}
+              rows={2}
+              placeholder="送信が完了しました。ありがとうございます。"
             />
-            <Label htmlFor="recaptcha-enabled" className="text-sm cursor-pointer">
-              reCAPTCHA v3 を有効にする
-            </Label>
-          </div>
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            有効にするには環境変数 NEXT_PUBLIC_RECAPTCHA_SITE_KEY と RECAPTCHA_SECRET_KEY の設定が必要です
-          </p>
-        </div>
-
-        {/* デザイン設定 */}
-        <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
-          <p className="text-sm font-medium">デザイン設定</p>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm w-24 shrink-0">テーマカラー</Label>
-            <input
-              type="color"
-              value={local.primaryColor || '#2563eb'}
-              onChange={(e) => setLocal({ ...local, primaryColor: e.target.value })}
-              className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
-            />
-            <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.primaryColor || '#2563eb'}</span>
-            {local.primaryColor && (
-              <button
-                className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                onClick={() => setLocal({ ...local, primaryColor: undefined })}
-              >
-                リセット
-              </button>
-            )}
           </div>
           <div className="space-y-1">
-            <Label className="text-sm">フォント</Label>
-            <select
-              value={local.fontFamily || ''}
-              onChange={(e) => setLocal({ ...local, fontFamily: e.target.value })}
-              className="w-full h-9 px-3 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))]"
-            >
-              {FONT_OPTIONS.map((f) => (
-                <option key={f.value} value={f.value}>{f.label}</option>
-              ))}
-            </select>
+            <Label className="text-sm">リダイレクトURL</Label>
+            <Input
+              value={local.redirectUrl || ''}
+              onChange={(e) => setLocal({ ...local, redirectUrl: e.target.value })}
+              placeholder="https://example.com/thanks"
+            />
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">送信完了後に別ページへ遷移させる場合</p>
           </div>
-          {/* 簡易デザイン調整（iframe/JS自動調整版・HTMLダイレクト版の両方に反映） */}
-          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+
+          {/* スパム対策 */}
+          <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
+            <p className="text-sm font-medium">スパム対策</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="recaptcha-enabled"
+                checked={local.recaptchaEnabled ?? false}
+                onChange={(e) => setLocal({ ...local, recaptchaEnabled: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="recaptcha-enabled" className="text-sm cursor-pointer">
+                reCAPTCHA v3 を有効にする
+              </Label>
+            </div>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              有効にするには環境変数 NEXT_PUBLIC_RECAPTCHA_SITE_KEY と RECAPTCHA_SECRET_KEY の設定が必要です
+            </p>
+          </div>
+        </>)}
+
+        {/* === 通知メール === */}
+        {tab === 'notify' && (<>
+          <div className="space-y-1">
+            <Label className="text-sm">通知メールアドレス</Label>
+            <Input
+              value={(local.notifyEmails || []).join(', ')}
+              onChange={(e) =>
+                setLocal({
+                  ...local,
+                  notifyEmails: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                })
+              }
+              placeholder="admin@example.com, staff@example.com"
+            />
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">新しい送信があった際の通知先。カンマ区切りで複数指定可</p>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-[hsl(var(--border))]">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="auto-reply"
+                checked={local.autoReply}
+                onChange={(e) => setLocal({ ...local, autoReply: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="auto-reply" className="text-sm cursor-pointer">
+                自動返信メールを送信する
+              </Label>
+            </div>
+            {local.autoReply && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-sm">自動返信メッセージ</Label>
+                  <Textarea
+                    value={local.autoReplyMessage || ''}
+                    onChange={(e) => setLocal({ ...local, autoReplyMessage: e.target.value })}
+                    rows={6}
+                    placeholder={'{{お名前}} 様\nこのたびはお問い合わせいただきありがとうございます。\n以下の内容で承りました。\n\n{{全回答}}'}
+                  />
+                  <div className="text-xs text-[hsl(var(--muted-foreground))] space-y-1 pt-1">
+                    <p>本文に以下のプレースホルダーを書くと、回答内容を差し込めます:</p>
+                    <p>
+                      <code className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">{'{{全回答}}'}</code>
+                      {' '}— すべての回答を表形式で挿入
+                    </p>
+                    {placeholderFields.length > 0 && (
+                      <p className="flex flex-wrap gap-1 items-baseline">
+                        <span>個別のフィールド:</span>
+                        {placeholderFields.map((f) => (
+                          <code key={f.id} className="px-1 py-0.5 bg-[hsl(var(--secondary))] rounded">
+                            {`{{${f.label}}}`}
+                          </code>
+                        ))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm">送信元表示名</Label>
+                    <Input
+                      value={local.autoReplyFromName || ''}
+                      onChange={(e) => setLocal({ ...local, autoReplyFromName: e.target.value })}
+                      placeholder="株式会社サンプル"
+                    />
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">差出人名として表示されます</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm">返信先アドレス（Reply-To）</Label>
+                    <Input
+                      type="email"
+                      value={local.autoReplyReplyTo || ''}
+                      onChange={(e) => setLocal({ ...local, autoReplyReplyTo: e.target.value })}
+                      placeholder="support@example.com"
+                    />
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者が返信した際の宛先（任意）</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm">件名</Label>
+                  <Input
+                    value={local.autoReplySubject || ''}
+                    onChange={(e) => setLocal({ ...local, autoReplySubject: e.target.value })}
+                    placeholder="【サンプル】お問い合わせありがとうございます"
+                  />
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">未設定時は「【フォームタイトル】お問い合わせありがとうございます」が使われます</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>)}
+
+        {/* === デザイン === */}
+        {tab === 'design' && (<>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <ColorRow
+              label="テーマカラー"
+              value={local.primaryColor}
+              fallback="#2563eb"
+              onChange={(v) => setLocal({ ...local, primaryColor: v })}
+              onClear={() => setLocal({ ...local, primaryColor: undefined })}
+            />
+            <div className="flex items-center gap-3">
+              <Label className="text-sm w-28 shrink-0">フォント</Label>
+              <select
+                value={local.fontFamily || ''}
+                onChange={(e) => setLocal({ ...local, fontFamily: e.target.value })}
+                className="flex-1 h-9 px-3 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))]"
+              >
+                {FONT_OPTIONS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* かんたんデザイン調整（iframe/JS自動調整版・HTMLダイレクト版の両方に反映） */}
+          <div className="space-y-3 pt-3 border-t border-[hsl(var(--border))]">
             <div>
               <p className="text-sm font-medium">かんたんデザイン調整</p>
               <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
@@ -279,124 +352,32 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
               </p>
             </div>
 
-            {/* フォーム最大幅 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">最大幅(px)</Label>
-              <Input
-                type="number"
-                min={280}
-                max={1200}
-                value={local.formMaxWidth ?? ''}
-                onChange={(e) =>
-                  setLocal({ ...local, formMaxWidth: e.target.value === '' ? undefined : Number(e.target.value) })
-                }
-                placeholder="576"
-                className="h-8 w-28"
-              />
-            </div>
-
-            {/* 角丸 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">角丸(px)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={40}
-                value={local.borderRadius ?? ''}
-                onChange={(e) =>
-                  setLocal({ ...local, borderRadius: e.target.value === '' ? undefined : Number(e.target.value) })
-                }
-                placeholder="6"
-                className="h-8 w-28"
-              />
-              <span className="text-[11px] text-[hsl(var(--muted-foreground))]">入力欄・ボタン</span>
-            </div>
-
-            {/* 項目間の余白 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">項目間の余白(px)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={80}
-                value={local.fieldGap ?? ''}
-                onChange={(e) =>
-                  setLocal({ ...local, fieldGap: e.target.value === '' ? undefined : Number(e.target.value) })
-                }
-                placeholder="24"
-                className="h-8 w-28"
-              />
-            </div>
-
-            {/* 入力欄の枠線色 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">入力欄の枠線色</Label>
-              <input
-                type="color"
-                value={local.inputBorderColor || '#d1d5db'}
-                onChange={(e) => setLocal({ ...local, inputBorderColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
-              />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.inputBorderColor || '#d1d5db'}</span>
-              {local.inputBorderColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, inputBorderColor: undefined })}>リセット</button>
-              )}
-            </div>
-
-            {/* ラベル文字色 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">ラベル文字色</Label>
-              <input
-                type="color"
-                value={local.labelColor || '#111827'}
-                onChange={(e) => setLocal({ ...local, labelColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
-              />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.labelColor || '#111827'}</span>
-              {local.labelColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, labelColor: undefined })}>リセット</button>
-              )}
-            </div>
-
-            {/* フォーム背景色 */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">フォーム背景色</Label>
-              <input
-                type="color"
-                value={local.formBgColor || '#ffffff'}
-                onChange={(e) => setLocal({ ...local, formBgColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
-              />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.formBgColor || '#ffffff'}</span>
-              {local.formBgColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, formBgColor: undefined })}>リセット</button>
-              )}
-            </div>
-
-            {/* ページ背景色（カードの外側／iframe・JS版のみ反映） */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-28 shrink-0">ページ背景色</Label>
-              <input
-                type="color"
-                value={local.pageBgColor || '#f1f5f9'}
-                onChange={(e) => setLocal({ ...local, pageBgColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]"
-              />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.pageBgColor || '#f1f5f9'}</span>
-              {local.pageBgColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, pageBgColor: undefined })}>リセット</button>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+              <NumberRow label="最大幅(px)" value={local.formMaxWidth} min={280} max={1200} placeholder="576"
+                onChange={(v) => setLocal({ ...local, formMaxWidth: v })} />
+              <NumberRow label="角丸(px)" value={local.borderRadius} min={0} max={40} placeholder="6" note="入力欄・ボタン"
+                onChange={(v) => setLocal({ ...local, borderRadius: v })} />
+              <NumberRow label="項目間の余白(px)" value={local.fieldGap} min={0} max={80} placeholder="24"
+                onChange={(v) => setLocal({ ...local, fieldGap: v })} />
+              <ColorRow label="入力欄の枠線色" value={local.inputBorderColor} fallback="#d1d5db"
+                onChange={(v) => setLocal({ ...local, inputBorderColor: v })}
+                onClear={() => setLocal({ ...local, inputBorderColor: undefined })} />
+              <ColorRow label="ラベル文字色" value={local.labelColor} fallback="#111827"
+                onChange={(v) => setLocal({ ...local, labelColor: v })}
+                onClear={() => setLocal({ ...local, labelColor: undefined })} />
+              <ColorRow label="フォーム背景色" value={local.formBgColor} fallback="#ffffff"
+                onChange={(v) => setLocal({ ...local, formBgColor: v })}
+                onClear={() => setLocal({ ...local, formBgColor: undefined })} />
+              <ColorRow label="ページ背景色" value={local.pageBgColor} fallback="#f1f5f9"
+                onChange={(v) => setLocal({ ...local, pageBgColor: v })}
+                onClear={() => setLocal({ ...local, pageBgColor: undefined })} />
             </div>
             <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
               ※ ページ背景色はフォームの外側（余白）の色です。iframe／JS自動調整版のみ反映されます。
             </p>
           </div>
 
-          <div className="space-y-1 pt-2 border-t border-[hsl(var(--border))]">
+          <div className="space-y-1 pt-3 border-t border-[hsl(var(--border))]">
             <Label className="text-sm">カスタムCSS（上級者向け）</Label>
             <Textarea
               value={local.customCss || ''}
@@ -407,117 +388,99 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
             />
             <p className="text-xs text-[hsl(var(--muted-foreground))]">.efo-form をルートセレクタとして使用できます（iframe/JS版）</p>
           </div>
-        </div>
-        </>) : (<>
-        {/* ランディングページ設定 */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="lp-enabled" checked={local.lpEnabled ?? false}
-              onChange={(e) => setLocal({ ...local, lpEnabled: e.target.checked })} className="h-4 w-4" />
-            <Label htmlFor="lp-enabled" className="text-sm cursor-pointer font-medium">
-              ランディングページを有効にする
-            </Label>
-          </div>
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            有効にすると公開ページ（/f/フォームID）にヘッダー・説明文・フッターが表示されます
-          </p>
-        </div>
-
-        {(local.lpEnabled ?? false) && (<>
-          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
-            <p className="text-sm font-medium">ヘッダー</p>
-            <ImageUrlInput label="ロゴ画像" value={local.lpLogoUrl || ''}
-              onChange={(url) => setLocal({ ...local, lpLogoUrl: url })}
-              placeholder="https://example.com/logo.png" />
-            <ImageUrlInput label="ヘッダー画像" value={local.lpHeroImageUrl || ''}
-              onChange={(url) => setLocal({ ...local, lpHeroImageUrl: url })}
-              placeholder="https://example.com/hero.jpg" />
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">フォーム上部に表示される画像（横幅いっぱいに表示）</p>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
-            <p className="text-sm font-medium">コンテンツ</p>
-            <div className="space-y-1">
-              <Label className="text-sm">見出し</Label>
-              <Input value={local.lpHeading || ''} onChange={(e) => setLocal({ ...local, lpHeading: e.target.value })}
-                placeholder="お問い合わせ" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-sm">説明文</Label>
-              <Textarea value={local.lpDescription || ''} onChange={(e) => setLocal({ ...local, lpDescription: e.target.value })}
-                rows={3} placeholder="以下のフォームからお気軽にお問い合わせください。" />
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
-            <p className="text-sm font-medium">デザイン</p>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-24 shrink-0">背景色</Label>
-              <input type="color" value={local.lpBgColor || '#f8fafc'}
-                onChange={(e) => setLocal({ ...local, lpBgColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]" />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.lpBgColor || '#f8fafc'}</span>
-              {local.lpBgColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, lpBgColor: undefined })}>リセット</button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-24 shrink-0">文字色</Label>
-              <input type="color" value={local.lpTextColor || '#1a1a1a'}
-                onChange={(e) => setLocal({ ...local, lpTextColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]" />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.lpTextColor || '#1a1a1a'}</span>
-              {local.lpTextColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, lpTextColor: undefined })}>リセット</button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm w-24 shrink-0">フッター背景</Label>
-              <input type="color" value={local.lpFooterBgColor || '#f1f5f9'}
-                onChange={(e) => setLocal({ ...local, lpFooterBgColor: e.target.value })}
-                className="h-8 w-16 rounded cursor-pointer border border-[hsl(var(--border))]" />
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">{local.lpFooterBgColor || '#f1f5f9'}</span>
-              {local.lpFooterBgColor && (
-                <button className="text-xs text-[hsl(var(--muted-foreground))] hover:underline"
-                  onClick={() => setLocal({ ...local, lpFooterBgColor: undefined })}>リセット</button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
-            <p className="text-sm font-medium">フッター</p>
-            <div className="space-y-1">
-              <Label className="text-sm">会社名</Label>
-              <Input value={local.lpFooterCompany || ''} onChange={(e) => setLocal({ ...local, lpFooterCompany: e.target.value })}
-                placeholder="株式会社〇〇" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-sm">フッターテキスト</Label>
-              <Textarea value={local.lpFooterText || ''} onChange={(e) => setLocal({ ...local, lpFooterText: e.target.value })}
-                rows={2} placeholder="〒000-0000 東京都渋谷区..." />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm">フッターリンク</Label>
-              {(local.lpFooterLinks || []).map((link, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <Input value={link.label} onChange={(e) => updateFooterLink(i, 'label', e.target.value)}
-                    placeholder="プライバシーポリシー" className="flex-1" />
-                  <Input value={link.url} onChange={(e) => updateFooterLink(i, 'url', e.target.value)}
-                    placeholder="https://..." className="flex-1" />
-                  <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))] shrink-0"
-                    onClick={() => removeFooterLink(i)}>×</Button>
-                </div>
-              ))}
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={addFooterLink}>
-                + リンクを追加
-              </Button>
-            </div>
-          </div>
         </>)}
+
+        {/* === ランディングページ === */}
+        {tab === 'lp' && (<>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="lp-enabled" checked={local.lpEnabled ?? false}
+                onChange={(e) => setLocal({ ...local, lpEnabled: e.target.checked })} className="h-4 w-4" />
+              <Label htmlFor="lp-enabled" className="text-sm cursor-pointer font-medium">
+                ランディングページを有効にする
+              </Label>
+            </div>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              有効にすると公開ページ（/f/フォームID）にヘッダー・説明文・フッターが表示されます
+            </p>
+          </div>
+
+          {(local.lpEnabled ?? false) && (<>
+            <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+              <p className="text-sm font-medium">ヘッダー</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ImageUrlInput label="ロゴ画像" value={local.lpLogoUrl || ''}
+                  onChange={(url) => setLocal({ ...local, lpLogoUrl: url })}
+                  placeholder="https://example.com/logo.png" />
+                <ImageUrlInput label="ヘッダー画像" value={local.lpHeroImageUrl || ''}
+                  onChange={(url) => setLocal({ ...local, lpHeroImageUrl: url })}
+                  placeholder="https://example.com/hero.jpg" />
+              </div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">フォーム上部に表示される画像（横幅いっぱいに表示）</p>
+            </div>
+
+            <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+              <p className="text-sm font-medium">コンテンツ</p>
+              <div className="space-y-1">
+                <Label className="text-sm">見出し</Label>
+                <Input value={local.lpHeading || ''} onChange={(e) => setLocal({ ...local, lpHeading: e.target.value })}
+                  placeholder="お問い合わせ" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">説明文</Label>
+                <Textarea value={local.lpDescription || ''} onChange={(e) => setLocal({ ...local, lpDescription: e.target.value })}
+                  rows={3} placeholder="以下のフォームからお気軽にお問い合わせください。" />
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+              <p className="text-sm font-medium">デザイン</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                <ColorRow label="背景色" value={local.lpBgColor} fallback="#f8fafc"
+                  onChange={(v) => setLocal({ ...local, lpBgColor: v })}
+                  onClear={() => setLocal({ ...local, lpBgColor: undefined })} />
+                <ColorRow label="文字色" value={local.lpTextColor} fallback="#1a1a1a"
+                  onChange={(v) => setLocal({ ...local, lpTextColor: v })}
+                  onClear={() => setLocal({ ...local, lpTextColor: undefined })} />
+                <ColorRow label="フッター背景" value={local.lpFooterBgColor} fallback="#f1f5f9"
+                  onChange={(v) => setLocal({ ...local, lpFooterBgColor: v })}
+                  onClear={() => setLocal({ ...local, lpFooterBgColor: undefined })} />
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+              <p className="text-sm font-medium">フッター</p>
+              <div className="space-y-1">
+                <Label className="text-sm">会社名</Label>
+                <Input value={local.lpFooterCompany || ''} onChange={(e) => setLocal({ ...local, lpFooterCompany: e.target.value })}
+                  placeholder="株式会社〇〇" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">フッターテキスト</Label>
+                <Textarea value={local.lpFooterText || ''} onChange={(e) => setLocal({ ...local, lpFooterText: e.target.value })}
+                  rows={2} placeholder="〒000-0000 東京都渋谷区..." />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">フッターリンク</Label>
+                {(local.lpFooterLinks || []).map((link, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <Input value={link.label} onChange={(e) => updateFooterLink(i, 'label', e.target.value)}
+                      placeholder="プライバシーポリシー" className="flex-1" />
+                    <Input value={link.url} onChange={(e) => updateFooterLink(i, 'url', e.target.value)}
+                      placeholder="https://..." className="flex-1" />
+                    <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))] shrink-0"
+                      onClick={() => removeFooterLink(i)}>×</Button>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={addFooterLink}>
+                  + リンクを追加
+                </Button>
+              </div>
+            </div>
+          </>)}
         </>)}
       </div>
+
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>キャンセル</Button>
         <Button onClick={handleSave}>保存</Button>
