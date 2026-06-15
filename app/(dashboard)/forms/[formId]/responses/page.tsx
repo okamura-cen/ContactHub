@@ -49,6 +49,8 @@ export default function ResponsesPage() {
   const [deleting, setDeleting] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [filterUnread, setFilterUnread] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const buildColumns = (fields: FieldInfo[]): DisplayColumn[] => {
     const cols: DisplayColumn[] = []
@@ -207,6 +209,73 @@ export default function ResponsesPage() {
     URL.revokeObjectURL(url)
   }, [columns, responses, formTitle])
 
+  // ヘッダー行とデータ行（表示用の文字列）を組み立てる
+  const buildTableData = useCallback(() => {
+    const headers = ['送信日時', ...columns.map((c) => c.label)]
+    const rows = responses.map((r) => {
+      const date = new Date(r.createdAt).toLocaleString('ja-JP')
+      return [date, ...columns.map((c) => (c.getCsv ? c.getCsv(r.data) : c.getValue(r.data)))]
+    })
+    return { headers, rows }
+  }, [columns, responses])
+
+  // Blob をファイルとしてダウンロードさせる
+  const downloadBlob = useCallback((blob: Blob, ext: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${formTitle}_responses_${new Date().toISOString().slice(0, 10)}.${ext}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [formTitle])
+
+  // Excel(.xlsx)：exceljs はダウンロード時のみ動的読み込み（初期表示を軽くするため）
+  const handleExportExcel = useCallback(async () => {
+    if (columns.length === 0 || responses.length === 0) return
+    setExporting(true)
+    try {
+      const { Workbook } = await import('exceljs')
+      const { headers, rows } = buildTableData()
+      const wb = new Workbook()
+      const ws = wb.addWorksheet('回答データ')
+      const headerRow = ws.addRow(headers)
+      headerRow.font = { bold: true }
+      // すべて文字列として書き込み、電話番号などの先頭ゼロ落ち・指数表記化を防ぐ
+      rows.forEach((row) => {
+        const added = ws.addRow(row)
+        added.eachCell((cell) => { cell.numFmt = '@' })
+      })
+      // 列幅をラベル長・値長に合わせて簡易調整
+      ws.columns.forEach((col, i) => {
+        const maxLen = Math.max(
+          String(headers[i] ?? '').length,
+          ...rows.map((r) => String(r[i] ?? '').length)
+        )
+        col.width = Math.min(Math.max(maxLen + 2, 10), 60)
+      })
+      const buf = await wb.xlsx.writeBuffer()
+      downloadBlob(
+        new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        'xlsx'
+      )
+    } catch {
+      toast({ title: 'Excelの書き出しに失敗しました', variant: 'destructive' })
+    } finally {
+      setExporting(false)
+    }
+  }, [columns, responses, buildTableData, downloadBlob, toast])
+
+  // JSON：ラベルをキーにした読みやすい形式
+  const handleExportJSON = useCallback(() => {
+    if (columns.length === 0 || responses.length === 0) return
+    const data = responses.map((r) => {
+      const obj: Record<string, string> = { 送信日時: new Date(r.createdAt).toLocaleString('ja-JP') }
+      columns.forEach((c) => { obj[c.label] = c.getValue(r.data) })
+      return obj
+    })
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'json')
+  }, [columns, responses, downloadBlob])
+
   const filteredResponses = responses.filter((r) => {
     if (filterUnread && r.isRead) return false
     if (searchText) {
@@ -245,9 +314,37 @@ export default function ResponsesPage() {
             )}
           </p>
         </div>
-        <Button variant="outline" onClick={handleExportCSV} disabled={responses.length === 0}>
-          CSVエクスポート
-        </Button>
+        {/* ダウンロード（形式選択） */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            onClick={() => setExportMenuOpen((v) => !v)}
+            disabled={responses.length === 0 || exporting}
+          >
+            {exporting ? '書き出し中...' : 'ダウンロード ▾'}
+          </Button>
+          {exportMenuOpen && (
+            <>
+              {/* 外側クリックで閉じる */}
+              <div className="fixed inset-0 z-10" onClick={() => setExportMenuOpen(false)} />
+              <div className="absolute right-0 mt-1 z-20 w-48 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-md py-1">
+                {[
+                  { label: 'CSV (.csv)', run: handleExportCSV },
+                  { label: 'Excel (.xlsx)', run: handleExportExcel },
+                  { label: 'JSON (.json)', run: handleExportJSON },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]"
+                    onClick={() => { setExportMenuOpen(false); item.run() }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 検索・絞り込み */}
