@@ -259,6 +259,15 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
             {local.autoReply && (
               <div className="space-y-3">
                 <div className="space-y-1">
+                  <Label className="text-sm">件名</Label>
+                  <Input
+                    value={local.autoReplySubject || ''}
+                    onChange={(e) => setLocal({ ...local, autoReplySubject: e.target.value })}
+                    placeholder="【サンプル】お問い合わせありがとうございます"
+                  />
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">未設定時は「【フォームタイトル】お問い合わせありがとうございます」が使われます</p>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-sm">自動返信メッセージ</Label>
                   <Textarea
                     value={local.autoReplyMessage || ''}
@@ -304,15 +313,6 @@ export function FormSettingsDialog({ open, onOpenChange, settings, onSave, field
                     />
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">受信者が返信した際の宛先（任意）</p>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm">件名</Label>
-                  <Input
-                    value={local.autoReplySubject || ''}
-                    onChange={(e) => setLocal({ ...local, autoReplySubject: e.target.value })}
-                    placeholder="【サンプル】お問い合わせありがとうございます"
-                  />
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">未設定時は「【フォームタイトル】お問い合わせありがとうございます」が使われます</p>
                 </div>
               </div>
             )}
