@@ -19,8 +19,13 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-/** フィールド値を表示用のプレーン文字列に整形 */
-export function formatFieldValue(field: Pick<FieldLike, 'type'>, value: unknown): string {
+/** フィールド値を表示用のプレーン文字列に整形
+ *  opts.nameHonorific: NAME（氏名）の末尾に「様」を付ける（自動返信メールの全回答差し込み用） */
+export function formatFieldValue(
+  field: Pick<FieldLike, 'type'>,
+  value: unknown,
+  opts?: { nameHonorific?: boolean }
+): string {
   if (value === null || value === undefined || value === '') return ''
 
   switch (field.type) {
@@ -41,7 +46,10 @@ export function formatFieldValue(field: Pick<FieldLike, 'type'>, value: unknown)
       const v = value as { sei?: string; mei?: string; seiKana?: string; meiKana?: string }
       const name = `${v.sei || ''} ${v.mei || ''}`.trim()
       const kana = `${v.seiKana || ''} ${v.meiKana || ''}`.trim()
-      return kana ? `${name}（${kana}）` : name
+      if (!name) return ''
+      const base = kana ? `${name}（${kana}）` : name
+      // 自動返信メールの全回答差し込み時のみ「様」を付ける
+      return opts?.nameHonorific ? `${base} 様` : base
     }
     case 'ZIP': {
       const v = value as { zipcode?: string; prefecture?: string; city?: string; address?: string }
@@ -62,11 +70,15 @@ export function formatFieldValue(field: Pick<FieldLike, 'type'>, value: unknown)
  *  - 自動返信メール本文の {{全回答}} 展開
  *  - 管理者通知メールの本体
  * の両方で使用 */
-export function renderAnswersTable(fields: FieldLike[], data: Record<string, unknown>): string {
+export function renderAnswersTable(
+  fields: FieldLike[],
+  data: Record<string, unknown>,
+  opts?: { nameHonorific?: boolean }
+): string {
   const rows = fields
     .filter((f) => !['HEADING', 'DIVIDER', 'PARAGRAPH'].includes(f.type))
     .map((f) => {
-      const v = formatFieldValue(f, data[f.id])
+      const v = formatFieldValue(f, data[f.id], opts)
       const display = v || '(未入力)'
       // 番号付き箇条書き等の改行は <br> に変換してセル内で改行表示
       const displayHtml = escapeHtml(display).replace(/\r?\n/g, '<br>')
@@ -88,7 +100,8 @@ export function expandAutoReplyTemplate(
     if (['HEADING', 'DIVIDER', 'PARAGRAPH'].includes(f.type)) continue
     labelMap.set(f.label, formatFieldValue(f, data[f.id]))
   }
-  const answersTable = renderAnswersTable(fields, data)
+  // 自動返信（お客様宛）の全回答テーブルでは氏名に「様」を付ける
+  const answersTable = renderAnswersTable(fields, data, { nameHonorific: true })
 
   const expanded = template.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => {
     const k = key.trim()
