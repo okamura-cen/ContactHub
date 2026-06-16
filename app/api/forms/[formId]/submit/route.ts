@@ -87,7 +87,8 @@ export async function POST(
       const notifyEmails = (settings.notifyEmails as string[]) || []
       if (notifyEmails.length > 0) {
         const allFields = form.steps.flatMap((s) => s.fields)
-        const answersTable = renderAnswersTable(allFields, data as Record<string, unknown>)
+        // 管理者通知メールでも氏名に「様」を付ける
+        const answersTable = renderAnswersTable(allFields, data as Record<string, unknown>, { nameHonorific: true })
 
         try {
           await resend.emails.send({
