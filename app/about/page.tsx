@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Script from 'next/script'
 import {
   FileText,
   ListChecks,
@@ -248,26 +248,28 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* お問い合わせ CTA */}
+      {/* お問い合わせ CTA + 埋め込みフォーム */}
       <section id="contact">
-        <div className="mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
-          <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
-            <Mail className="h-6 w-6" />
+        <div className="mx-auto max-w-3xl px-6 py-20 sm:py-24">
+          <div className="text-center">
+            <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
+              <Mail className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">まずはお気軽にご相談ください</h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
+              サービス内容のご説明、料金のご案内、導入のご相談まで承ります。
+              「こんなフォームは作れる？」といったご質問だけでも歓迎です。
+            </p>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">まずはお気軽にご相談ください</h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
-            サービス内容のご説明、料金のご案内、導入のご相談まで承ります。
-            「こんなフォームは作れる？」といったご質問だけでも歓迎です。
-          </p>
-          <div className="mt-8">
-            {/* TODO: 問い合わせ先（メールアドレス／問い合わせフォームURL）を差し替えてください */}
-            <a
-              href="mailto:okamura@c-1000.co.jp"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--primary))] px-8 py-3 text-sm font-medium text-[hsl(var(--primary-foreground))] transition-colors hover:opacity-90"
-            >
-              <Mail className="h-4 w-4" />
-              メールで問い合わせる
-            </a>
+
+          {/* ContactHub フォーム埋め込み */}
+          <div className="mt-10">
+            <div id="efo-form-cmr2ssmbl0003txoky9qp1xfj" />
+            <Script
+              src="https://contact-hub.app/embed-direct.js"
+              data-form-id="cmr2ssmbl0003txoky9qp1xfj"
+              strategy="afterInteractive"
+            />
           </div>
         </div>
       </section>
