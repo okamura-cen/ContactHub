@@ -121,10 +121,15 @@ export default function AboutPage() {
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: 'url(/about-hero-bg.png)' }}
         />
-        {/* テキストの可読性を確保する白オーバーレイ（上は薄く・下にかけて濃く） */}
+        {/* テキストの可読性を確保する白オーバーレイ（上下からのみ、中央は画像を活かす） */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-0 bg-gradient-to-b from-[hsl(var(--background))]/30 via-[hsl(var(--background))]/55 to-[hsl(var(--background))]"
+          className="absolute inset-0 z-0 bg-gradient-to-b from-[hsl(var(--background))]/40 via-transparent to-[hsl(var(--background))]"
+        />
+        {/* 中央のテキスト背後だけ薄く明るくする放射状ライト */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 [background:radial-gradient(ellipse_60%_50%_at_50%_45%,hsl(var(--background))/0.55,transparent_70%)]"
         />
         <div className="relative z-10 mx-auto max-w-5xl px-6 py-20 text-center sm:py-28">
           <p className="mb-4 text-sm font-semibold tracking-wider text-[hsl(var(--primary))]">
@@ -192,10 +197,10 @@ export default function AboutPage() {
             {FEATURES.map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
-                className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6"
+                className="group rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(193,114,68,0.25)]"
               >
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-md bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
-                  <Icon className="h-5 w-5" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))]/20 via-[hsl(var(--primary))]/10 to-[hsl(var(--primary))]/5 text-[hsl(var(--primary))] ring-1 ring-inset ring-[hsl(var(--primary))]/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-transform duration-300 group-hover:scale-105">
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </div>
                 <h3 className="text-base font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">{desc}</p>
@@ -212,8 +217,16 @@ export default function AboutPage() {
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {REASONS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="text-center">
-                <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
-                  <Icon className="h-6 w-6" />
+                <div className="relative mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center">
+                  {/* 外側のふんわりグロー */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full bg-[hsl(var(--primary))]/15 blur-lg"
+                  />
+                  {/* アイコンを載せる円 */}
+                  <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--primary))]/25 via-[hsl(var(--primary))]/10 to-white text-[hsl(var(--primary))] ring-1 ring-inset ring-[hsl(var(--primary))]/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_6px_16px_-8px_rgba(193,114,68,0.35)]">
+                    <Icon className="h-6 w-6" strokeWidth={1.75} />
+                  </span>
                 </div>
                 <h3 className="text-base font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">{desc}</p>
@@ -231,9 +244,9 @@ export default function AboutPage() {
             {STEPS.map((step, i) => (
               <div
                 key={step.title}
-                className="relative rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6"
+                className="relative rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
               >
-                <div className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[hsl(var(--primary))] text-sm font-bold text-[hsl(var(--primary-foreground))]">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(20_65%_48%)] to-[hsl(30_55%_58%)] text-sm font-bold text-[hsl(var(--primary-foreground))] shadow-[0_4px_12px_-4px_rgba(193,114,68,0.5),inset_0_1px_0_rgba(255,255,255,0.25)]">
                   {i + 1}
                 </div>
                 <h3 className="text-sm font-semibold">{step.title}</h3>
@@ -252,8 +265,14 @@ export default function AboutPage() {
       <section id="contact">
         <div className="mx-auto max-w-3xl px-6 py-20 sm:py-24">
           <div className="text-center">
-            <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
-              <Mail className="h-6 w-6" />
+            <div className="relative mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center">
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-[hsl(var(--primary))]/20 blur-lg"
+              />
+              <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--primary))]/25 via-[hsl(var(--primary))]/10 to-white text-[hsl(var(--primary))] ring-1 ring-inset ring-[hsl(var(--primary))]/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_6px_16px_-8px_rgba(193,114,68,0.35)]">
+                <Mail className="h-6 w-6" strokeWidth={1.75} />
+              </span>
             </div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">まずはお気軽にご相談ください</h2>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
